@@ -28,4 +28,3 @@ Assume a collision-resistant hash function H and the condition R is chosen unifo
 
 - If Bob produces the condition R such that H(R) = y and also provides aggregated signatures on message m signed by all the users in U before t days, Alice pays Bob x bitcoins.
 - If t days elapse, Alice gets back x bitcoins.
-
