@@ -1,7 +1,7 @@
 #!/usr/bin/python3
 # -*- coding: UTF-8 -*-
 
-import sys, getopt, requests
+import sys, getopt, json
 import bytom_rpc
 
 def main():
@@ -29,13 +29,12 @@ def main():
             assert False, "unhandled option"
     with open(in_file, 'r') as f:
         contract = f.read().replace('\n', '')
-        print(contract)
         data['contract'] = contract
-        print(data)
     with open(out_file, 'w') as f:
         r = bytom_rpc.call('compile', data)
-        print(r)
-        f.write(r)
+        r_str = json.dumps(r, sort_keys=True, indent=2, separators=(',', ':'))
+        print(r_str)
+        f.write(r_str)
 
 if __name__ == "__main__":
    main()
