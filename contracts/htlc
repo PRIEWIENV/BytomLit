@@ -10,7 +10,7 @@ contract HTLC(
     unlock valueAmount of valueAsset
   }
   clause cancel(sig: Signature) {
-    verify below(blockHeight)
+    verify above(blockHeight)
     verify checkTxSig(sender, sig)
     unlock valueAmount of valueAsset
   }
