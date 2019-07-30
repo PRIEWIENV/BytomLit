@@ -15,6 +15,15 @@ Set up the core server which will listen for incoming peer connections.
                     - -> https://github.com/lightningnetwork/lnd/blob/master/server.go#L1568-L1847
                         + -> https://github.com/lightningnetwork/lnd/blob/master/server.go#L1718
                             * -> https://github.com/lightningnetwork/lnd/blob/master/server.go#L3084
+            + util
+                * BroadcastMessage
+                    - https://github.com/lightningnetwork/lnd/blob/master/server.go#L2188
+                * NotifyWhenOnline
+                    - https://github.com/lightningnetwork/lnd/blob/master/server.go#L2237
+                * NotifyWhenOffline
+                    - https://github.com/lightningnetwork/lnd/blob/master/server.go#L2270
+                * FindPeer
+                    - https://github.com/lightningnetwork/lnd/blob/master/server.go#L2300
         - routing
         - path finding
         - penalty
