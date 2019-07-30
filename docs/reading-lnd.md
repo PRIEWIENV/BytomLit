@@ -9,10 +9,12 @@ Set up the core server which will listen for incoming peer connections.
 + https://github.com/lightningnetwork/lnd/blob/master/lnd.go#L419
     * -> https://github.com/lightningnetwork/lnd/blob/master/server.go#L291
         - connect to peer
-            + https://github.com/lightningnetwork/lnd/blob/master/server.go#L3084
+            + https://github.com/lightningnetwork/lnd/blob/master/server.go#L1976
             + bootstrapping
                 * https://github.com/lightningnetwork/lnd/blob/master/server.go#L1299-L1306
                     - -> https://github.com/lightningnetwork/lnd/blob/master/server.go#L1568-L1847
+                        + -> https://github.com/lightningnetwork/lnd/blob/master/server.go#L1718
+                            * -> https://github.com/lightningnetwork/lnd/blob/master/server.go#L3084
         - routing
         - path finding
         - penalty
