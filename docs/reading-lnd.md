@@ -18,6 +18,8 @@ Initialize, and register the gRPC server.
 
 
 ## channel related
+### open
++ https://github.com/lightningnetwork/lnd/blob/master/server.go#L3142
 
 
 ## wallets
