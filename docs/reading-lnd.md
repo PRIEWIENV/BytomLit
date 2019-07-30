@@ -12,7 +12,7 @@ Set up the core server which will listen for incoming peer connections.
             + https://github.com/lightningnetwork/lnd/blob/master/server.go#L413-L434
 
 ## RPC server
-Initialize, and register our implementation of the gRPC interface exported by the rpcServer.
+Initialize, and register the gRPC server.
 
 + https://github.com/lightningnetwork/lnd/blob/master/lnd.go#L454
 
