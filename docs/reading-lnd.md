@@ -8,8 +8,15 @@ Set up the core server which will listen for incoming peer connections.
 
 + https://github.com/lightningnetwork/lnd/blob/master/lnd.go#L419
     * -> https://github.com/lightningnetwork/lnd/blob/master/server.go#L291
+        - 
         - callback for closing conn
             + https://github.com/lightningnetwork/lnd/blob/master/server.go#L413-L434
+        - NAT
+            + discover
+                * https://github.com/lightningnetwork/lnd/blob/master/server.go#L470
+            + set up port forwarding
+                * https://github.com/lightningnetwork/lnd/blob/master/server.go#L523
+                    - -> https://github.com/lightningnetwork/lnd/blob/master/server.go#L1389
 
 ## RPC server
 Initialize, and register the gRPC server.
