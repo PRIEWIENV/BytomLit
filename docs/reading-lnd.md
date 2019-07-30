@@ -10,8 +10,14 @@ Set up the core server which will listen for incoming peer connections.
     * -> https://github.com/lightningnetwork/lnd/blob/master/server.go#L291
         - connect to peer
             + https://github.com/lightningnetwork/lnd/blob/master/server.go#L3084
+            + bootstrapping
+                * https://github.com/lightningnetwork/lnd/blob/master/server.go#L1568-L1847
         - routing
         - path finding
+        - penalty
+        - payment
+        - funding
+        - gossip???
         - callback for closing conn
             + https://github.com/lightningnetwork/lnd/blob/master/server.go#L413-L434
                 * disconn peer
