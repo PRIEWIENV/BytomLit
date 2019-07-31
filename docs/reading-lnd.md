@@ -25,10 +25,25 @@ Set up the core server which will listen for incoming peer connections.
                 * FindPeer
                     - https://github.com/lightningnetwork/lnd/blob/master/server.go#L2300
         - routing
+            + https://github.com/lightningnetwork/lnd/blob/master/routing/router_test.go
+            + https://github.com/lightningnetwork/lnd/blob/master/routing/route/route_test.go
         - path finding
+            + https://github.com/lightningnetwork/lnd/blob/master/routing/pathfind_test.go
+        - peer
+            + func TestPeerChannelClosureAcceptFeeResponder(t *testing.T) {
+            + func TestPeerChannelClosureAcceptFeeInitiator(t *testing.T) {
+            + func TestPeerChannelClosureFeeNegotiationsResponder(t *testing.T) {
+            + func TestPeerChannelClosureFeeNegotiationsInitiator(t *testing.T) {
         - penalty
         - payment
+            + https://github.com/lightningnetwork/lnd/blob/master/routing/payment_lifecycle.go
         - funding
+            + main logic
+                * https://github.com/lightningnetwork/lnd/blob/master/fundingmanager.go#L903
+                    - TODO
+                * fundingmanager_test
+            + ???
+                * https://github.com/lightningnetwork/lnd/blob/master/fundingmanager.go#L487
         - gossip???
         - callback for closing conn
             + https://github.com/lightningnetwork/lnd/blob/master/server.go#L413-L434
@@ -45,7 +60,11 @@ Set up the core server which will listen for incoming peer connections.
 Initialize, and register the gRPC server.
 
 + https://github.com/lightningnetwork/lnd/blob/master/lnd.go#L454
++ https://github.com/lightningnetwork/lnd/blob/master/rpcserver.go
++ https://github.com/lightningnetwork/lnd/blob/master/lnrpc/
 
+## c2c
++ https://github.com/lightningnetwork/lnd/blob/master/lntest/itest/lnd_test.go
 
 ## channel related
 ### open
@@ -54,3 +73,8 @@ Initialize, and register the gRPC server.
 
 ## wallets
 
+## resolve
++ https://github.com/lightningnetwork/lnd/blob/master/contractcourt/
+
+## multi-hop claim
++ https://github.com/lightningnetwork/lnd/blob/master/lntest/itest/
