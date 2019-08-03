@@ -1,7 +1,5 @@
 # lit - a lightning node you can run on your own
 
-[![Build Status](http://hubris.media.mit.edu:8080/job/lit-PR/badge/icon)](http://hubris.media.mit.edu:8080/job/lit/)
-
 Under development, not for use with real money.
 
 ## Setup
