@@ -1,4 +1,36 @@
-# Byte-compiled / optimized / DLL files
-tools/__pycache__/
-tools/*.py[cod]
-tools/*$py.class
+# Lit stuff
+lit
+lit-af
+!cmd/lit-af
+cmd/lit-af/lit-af
+
+headers.bin
+ln.db
+testkey.hex
+utxo.db
+watch.db
+setup.sh
+webui/node_modules
+webui/dist
+webui/build
+*.pyc
+
+# Editor temp files
+\#*
+.\#*
+
+# Windows Specific
+*.exe
+
+### Vim ###
+# swap
+[._]*.s[a-v][a-z]
+[._]*.sw[a-p]
+[._]s[a-v][a-z]
+[._]sw[a-p]
+# session
+Session.vim
+# temporary
+.netrwhist
+# auto-generated tag files
+tags

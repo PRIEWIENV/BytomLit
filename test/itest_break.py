@@ -1,0 +1,16 @@
+import testlib
+import test_combinators
+
+fee = 20
+initialsend = 200000
+capacity = 1000000
+
+def forward(env):
+    lit1 = env.lits[0]
+    lit2 = env.lits[1]
+    test_combinators.run_break_test(env, lit1, lit2, lit1)
+
+def reverse(env):
+    lit1 = env.lits[0]
+    lit2 = env.lits[1]
+    test_combinators.run_break_test(env, lit1, lit2, lit1)
