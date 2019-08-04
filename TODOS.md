@@ -8,3 +8,5 @@ And also try `grep` with "TODO:"
     * bytom param
         - rename to bytom
     * fix register
++ link wallet
+    * use tn3 as template
