@@ -12,6 +12,7 @@ And also try `grep` with "TODO:"
     * fix resync
     + __sync bytom height?__
         * fix SPVCon.Connect
+            + fix deadlock
         * fix wallit
         * fix SPVCon.incomingMessageHandler
     + `bech32.Encode("ln"` can be a good start point

@@ -196,6 +196,8 @@ func (s *SPVCon) Handshake(listOfNodes []string) error {
 // the node to see if its up and establishes a connection followed by Handshake()
 // which sends out wire messages, checks for version string to prevent spam, etc.
 func (s *SPVCon) Connect(remoteNode string) error {
+	// TODO:
+	remoteNode = "localhost"
 	var err error
 	var listOfNodes []string
 	if lnutil.YupString(remoteNode) { // TODO Make this better.  Perhaps a "connection target"?

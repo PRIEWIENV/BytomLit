@@ -65,6 +65,7 @@ func NewWallit(
 	}
 	hookFail := false
 	logging.Infof("DB corrected height %d\n", height)
+	// TODO: fix here
 	incomingTx, incomingBlockheight, err := w.Hook.Start(height, spvhost, wallitpath, proxyURL, p)
 	if err != nil {
 		hookFail = true
