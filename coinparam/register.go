@@ -195,12 +195,6 @@ func init() {
 	mustRegister(&TestNet3Params)
 	mustRegister(&RegressionNetParams)
 	mustRegister(&BC2NetParams)
-	mustRegister(&LiteCoinTestNet4Params)
-	mustRegister(&LiteRegNetParams)
-	mustRegister(&VertcoinRegTestParams)
-	mustRegister(&VertcoinTestNetParams)
-	mustRegister(&VertcoinParams)
-	mustRegister(&DummyUsdNetParams)
 }
 
 // mustRegister performs the same function as Register except it panics if there
