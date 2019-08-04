@@ -7,6 +7,5 @@ And also try `grep` with "TODO:"
         - do we need to add merkle tx status? 
     * bytom param
         - rename to bytom
-    * fix register
 + link wallet
     * use tn3 as template
