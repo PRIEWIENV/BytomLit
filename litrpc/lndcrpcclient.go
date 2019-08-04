@@ -76,7 +76,7 @@ func NewLocalLndcRpcClientWithHomeDirAndPort(litHomeDir string, port uint32) (*L
 	if err != nil {
 		return nil, err
 	}
-	rootPrivKey, err := hdkeychain.NewMaster(privKey[:], &coinparam.TestNet3Params)
+	rootPrivKey, err := hdkeychain.NewMaster(privKey[:], &coinparam.BitcoinParams)
 	if err != nil {
 		return nil, err
 	}
