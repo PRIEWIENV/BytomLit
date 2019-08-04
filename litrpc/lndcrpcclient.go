@@ -38,7 +38,7 @@ type LndcRpcClient struct {
 // derivation than the nodeID to determine the private key. This key is authorized
 // by default for remote control.
 func LndcRpcCanConnectLocally() bool {
-	litHomeDir := os.Getenv("HOME") + "/.lit"
+	litHomeDir := os.Getenv("HOME") + "/.blit"
 	return LndcRpcCanConnectLocallyWithHomeDir(litHomeDir)
 }
 
@@ -56,14 +56,14 @@ func LndcRpcCanConnectLocallyWithHomeDir(litHomeDir string) bool {
 // NewLocalLndcRpcClient is an overload for NewLocalLndcRpcClientWithHomeDirAndPort
 // using the default home dir and port
 func NewLocalLndcRpcClient() (*LndcRpcClient, error) {
-	litHomeDir := os.Getenv("HOME") + "/.lit"
+	litHomeDir := os.Getenv("HOME") + "/.blit"
 	return NewLocalLndcRpcClientWithHomeDirAndPort(litHomeDir, 2448)
 }
 
 // NewLocalLndcRpcClientWithPort is an overload for
 // NewLocalLndcRpcClientWithHomeDirAndPort using the default home dir
 func NewLocalLndcRpcClientWithPort(port uint32) (*LndcRpcClient, error) {
-	litHomeDir := os.Getenv("HOME") + "/.lit"
+	litHomeDir := os.Getenv("HOME") + "/.blit"
 	return NewLocalLndcRpcClientWithHomeDirAndPort(litHomeDir, port)
 }
 
