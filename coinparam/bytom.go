@@ -11,7 +11,7 @@ import (
 var BitcoinParams = Params{
 	Name:          "bitcoin",
 	NetMagicBytes: 0xd9b4bef9,
-	DefaultPort:   "8333",
+	DefaultPort:   "9888",
 	DNSSeeds:      []string{},
 
 	// Chain parameters
