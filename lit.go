@@ -64,7 +64,7 @@ type litConfig struct { // define a struct for usage with go-flags
 }
 
 var (
-	defaultLitHomeDirName                  = os.Getenv("HOME") + "/.lit"
+	defaultLitHomeDirName                  = os.Getenv("HOME") + "/.blit"
 	defaultTrackerURL                      = "http://hubris.media.mit.edu:46580"
 	defaultKeyFileName                     = "privkey.hex"
 	defaultConfigFilename                  = "lit.conf"
@@ -249,6 +249,7 @@ func linkWallets(node *qln.LitNode, key *[32]byte, conf *litConfig) error {
 
 func main() {
 
+	// TODO: config by cli
 	conf := litConfig{
 		LitHomeDir:                      defaultLitHomeDirName,
 		Rpcport:                         defaultRpcport,
