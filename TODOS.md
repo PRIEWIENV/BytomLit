@@ -13,7 +13,8 @@ And also try `grep` with "TODO:"
     + __sync bytom height?__
         * fix SPVCon.Connect
             + fix deadlock
-                * DialNode(listOfNodes) succeed
+                * SPVCon.Handshake
+                    * maybe don't use wire but rpc
         * fix wallit
         * fix SPVCon.incomingMessageHandler
     + `bech32.Encode("ln"` can be a good start point
