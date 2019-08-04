@@ -87,6 +87,7 @@ func newConfigParser(conf *litConfig, options flags.Options) *flags.Parser {
 	return parser
 }
 
+// TODO: fix resync
 // TODO: do we need to link bytom mainnet wallet?
 func linkWallets(node *qln.LitNode, key *[32]byte, conf *litConfig) error {
 	p := &coinparam.BitcoinParams
