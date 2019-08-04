@@ -32,7 +32,7 @@ May end up using termbox-go
 */
 
 const (
-	litHomeDirName     = ".lit"
+	litHomeDirName     = ".blit"
 	historyFilename    = "lit-af.history"
 	defaultKeyFileName = "privkey.hex"
 )
