@@ -128,6 +128,7 @@ func (s *SPVCon) Start(
 	}
 
 	err = s.Connect(host)
+	// TODO: fix here
 	if err != nil {
 		logging.Errorf("Can't connect to host %s\n", host)
 		return nil, nil, err
