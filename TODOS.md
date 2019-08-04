@@ -6,3 +6,5 @@ And also try `grep` with "TODO:"
     * fields
         - do we need to add merkle tx status? 
     * bytom param
+        - rename to bytom
+    * fix register
