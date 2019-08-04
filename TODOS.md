@@ -11,4 +11,5 @@ And also try `grep` with "TODO:"
 + link wallet
     * fix resync
     + __sync bytom height?__
+        * fix SPVCon.Connect
 + failure loading exchange rates: open rates.json: no such file or directory
