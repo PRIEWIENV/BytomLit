@@ -9,3 +9,4 @@ And also try `grep` with "TODO:"
         - rename to bytom
 + link wallet
     * use tn3 as template
++ ailure loading exchange rates: open rates.json: no such file or directory
