@@ -89,7 +89,19 @@ func newConfigParser(conf *litConfig, options flags.Options) *flags.Parser {
 
 // TODO: do we need to link bytom mainnet wallet?
 func linkWallets(node *qln.LitNode, key *[32]byte, conf *litConfig) error {
-	return nil
+	p := &coinparam.BitcoinParams
+	resync := true
+	// resync := false
+	// conf.Tip = consts.BitcoinTestnet3BHeight
+	// if conf.Resync == "bm" {
+	// 	if conf.Tip < consts.BitcoinTestnet3BHeight {
+	// 		conf.Tip = consts.BitcoinTestnet3BHeight
+	// 	}
+	// 	resync = true
+	// }
+	return node.LinkBaseWallet(
+		key, conf.Tip, resync, conf.Tower,
+		conf.Bmhost, conf.ChainProxyURL, p)
 }
 
 func main() {
