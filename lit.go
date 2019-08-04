@@ -19,16 +19,9 @@ import (
 )
 
 type litConfig struct { // define a struct for usage with go-flags
+	// TODO: different networks
 	// networks lit can try connecting to
-	Tn3host      string `long:"tn3" description:"Connect to bitcoin testnet3."`
-	Bc2host      string `long:"bc2" description:"bc2 full node."`
-	Lt4host      string `long:"lt4" description:"Connect to litecoin testnet4."`
-	Reghost      string `long:"reg" description:"Connect to bitcoin regtest."`
-	Litereghost  string `long:"litereg" description:"Connect to litecoin regtest."`
-	Dummyusdhost string `long:"dusd" description:"Connect to Dummy USD node."`
-	Rtvtchost    string `long:"rtvtc" description:"Connect to Vertcoin regtest node."`
-	Tvtchost     string `long:"tvtc" description:"Connect to Vertcoin test node."`
-	Vtchost      string `long:"vtc" description:"Connect to Vertcoin."`
+	Bmhost string `long:"bm" description:"bytom mainnet full node."`
 	// system specific configs
 	LitHomeDir string `long:"dir" description:"Specify Home Directory of lit as an absolute path."`
 	TrackerURL string `long:"tracker" description:"LN address tracker URL http|https://host:port"`
