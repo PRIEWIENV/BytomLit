@@ -87,7 +87,7 @@ func newConfigParser(conf *litConfig, options flags.Options) *flags.Parser {
 	return parser
 }
 
-// TODO: at leat link a wallet
+// TODO:
 func linkWallets(node *qln.LitNode, key *[32]byte, conf *litConfig) error {
 	return nil
 }
