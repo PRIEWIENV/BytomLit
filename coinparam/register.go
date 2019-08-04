@@ -192,8 +192,6 @@ type Checkpoint struct {
 func init() {
 	// Register all default networks when the package is initialized.
 	mustRegister(&BitcoinParams)
-	mustRegister(&TestNet3Params)
-	mustRegister(&RegressionNetParams)
 	mustRegister(&BC2NetParams)
 }
 

@@ -41,21 +41,14 @@ func (u *PorTxo) AddWIF(w btcutil.WIF) error {
 
 		adr := new(btcutil.AddressPubKeyHash)
 
-		if w.IsForNet(&coinparam.TestNet3Params) {
-			// generate address from wif key
-			adr, err = btcutil.NewAddressPubKeyHash(
-				btcutil.Hash160(w.SerializePubKey()), &coinparam.TestNet3Params)
-			if err != nil {
-				return err
-			}
-		} else { // assume mainnet
-			// generate address from wif key
-			adr, err = btcutil.NewAddressPubKeyHash(
-				btcutil.Hash160(w.SerializePubKey()), &coinparam.BitcoinParams)
-			if err != nil {
-				return err
-			}
+		// assume mainnet
+		// generate address from wif key
+		adr, err = btcutil.NewAddressPubKeyHash(
+			btcutil.Hash160(w.SerializePubKey()), &coinparam.BitcoinParams)
+		if err != nil {
+			return err
 		}
+
 		if len(u.PkScript) != 25 {
 			return fmt.Errorf("pkh utxo script %d bytes (not 25)", len(u.PkScript))
 		}
