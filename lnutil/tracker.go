@@ -34,7 +34,10 @@ type nodeinfo struct {
 	}
 }
 
+// TODO:
 func Announce(priv *koblitz.PrivateKey, port int, litadr string, trackerURL string) error {
+	return nil
+
 	client := &http.Client{
 		Timeout: time.Second * 4, // 4+4 to accomodate the 10s RPC timeout
 	}
