@@ -23,6 +23,7 @@ func createDefaultConfigFile(destinationPath string) error {
 	defer dest.Close()
 
 	writer := bufio.NewWriter(dest)
+	// TODO: bm=localhost:9888?
 	defaultArgs := []byte("bm=1")
 	_, err = writer.Write(defaultArgs)
 	if err != nil {
