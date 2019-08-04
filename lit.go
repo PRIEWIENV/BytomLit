@@ -10,9 +10,7 @@ import (
 	"github.com/mit-dci/lit/logging"
 
 	"github.com/mit-dci/lit/coinparam"
-	consts "github.com/mit-dci/lit/consts"
 	"github.com/mit-dci/lit/litrpc"
-	"github.com/mit-dci/lit/lnutil"
 	"github.com/mit-dci/lit/qln"
 
 	flags "github.com/jessevdk/go-flags"
@@ -88,155 +86,9 @@ func newConfigParser(conf *litConfig, options flags.Options) *flags.Parser {
 	parser := flags.NewParser(conf, options)
 	return parser
 }
+
+// TODO: at leat link a wallet
 func linkWallets(node *qln.LitNode, key *[32]byte, conf *litConfig) error {
-	// for now, wallets are linked to the litnode on startup, and
-	// can't appear / disappear while it's running.  Later
-	// could support dynamically adding / removing wallets
-
-	// order matters; the first registered wallet becomes the default
-
-	var err error
-	// try regtest
-	if !lnutil.NopeString(conf.Reghost) {
-		p := &coinparam.RegressionNetParams
-		logging.Infof("reg: %s\n", conf.Reghost)
-		resync := false
-		conf.Tip = consts.BitcoinRegtestBHeight
-		if conf.Resync == "reg" {
-			if conf.Tip < consts.BitcoinRegtestBHeight {
-				conf.Tip = consts.BitcoinRegtestBHeight
-			}
-			resync = true
-		}
-		err = node.LinkBaseWallet(key, conf.Tip, resync,
-			conf.Tower, conf.Reghost, conf.ChainProxyURL, p)
-		if err != nil {
-			return err
-		}
-	}
-	// try testnet3
-	if !lnutil.NopeString(conf.Tn3host) {
-		p := &coinparam.TestNet3Params
-		resync := false
-		conf.Tip = consts.BitcoinTestnet3BHeight
-		if conf.Resync == "tn3" {
-			if conf.Tip < consts.BitcoinTestnet3BHeight {
-				conf.Tip = consts.BitcoinTestnet3BHeight
-			}
-			resync = true
-		}
-		err = node.LinkBaseWallet(
-			key, conf.Tip, resync, conf.Tower,
-			conf.Tn3host, conf.ChainProxyURL, p)
-		if err != nil {
-			return err
-		}
-	}
-	// try litecoin regtest
-	if !lnutil.NopeString(conf.Litereghost) {
-		p := &coinparam.LiteRegNetParams
-		resync := false
-		conf.Tip = consts.BitcoinRegtestBHeight
-		if conf.Resync == "ltcreg" {
-			if conf.Tip < consts.BitcoinRegtestBHeight {
-				conf.Tip = consts.BitcoinRegtestBHeight // birth heights are the same for btc and ltc regtests
-			}
-			resync = true
-		}
-		err = node.LinkBaseWallet(key, conf.Tip, resync,
-			conf.Tower, conf.Litereghost, conf.ChainProxyURL, p)
-		if err != nil {
-			return err
-		}
-	}
-	// try litecoin testnet4
-	if !lnutil.NopeString(conf.Lt4host) {
-		p := &coinparam.LiteCoinTestNet4Params
-		resync := false
-		conf.Tip = p.StartHeight
-		if conf.Resync == "ltctn" {
-			if conf.Tip < 1 {
-				conf.Tip = 1
-			}
-			resync = true
-		}
-		err = node.LinkBaseWallet(
-			key, p.StartHeight, resync, conf.Tower,
-			conf.Lt4host, conf.ChainProxyURL, p)
-		if err != nil {
-			return err
-		}
-	}
-	// try vertcoin testnet
-	if !lnutil.NopeString(conf.Tvtchost) {
-		p := &coinparam.VertcoinTestNetParams
-		resync := false
-		if conf.Resync == "vtctn" {
-			resync = true
-		}
-		err = node.LinkBaseWallet(
-			key, consts.VertcoinTestnetBHeight, resync, conf.Tower,
-			conf.Tvtchost, conf.ChainProxyURL, p)
-		if err != nil {
-			return err
-		}
-	}
-	// try vertcoin mainnet
-	if !lnutil.NopeString(conf.Vtchost) {
-		p := &coinparam.VertcoinParams
-		resync := false
-		conf.Tip = p.StartHeight
-		if conf.Resync == "ltctn" {
-			if conf.Tip < 1 {
-				conf.Tip = 1
-			}
-			resync = true
-		}
-		err = node.LinkBaseWallet(
-			key, conf.Tip, resync, conf.Tower,
-			conf.Vtchost, conf.ChainProxyURL, p)
-		if err != nil {
-			return err
-		}
-	}
-	// try dummyusd
-	if !lnutil.NopeString(conf.Dummyusdhost) {
-		p := &coinparam.DummyUsdNetParams
-		logging.Infof("Dummyusd: %s\n", conf.Dummyusdhost)
-		resync := false
-		conf.Tip = p.StartHeight
-		if conf.Resync == "dusd" {
-			if conf.Tip < 1 {
-				conf.Tip = 1
-			}
-			resync = true
-		}
-		err = node.LinkBaseWallet(key, consts.BitcoinRegtestBHeight, resync,
-			conf.Tower, conf.Dummyusdhost, conf.ChainProxyURL, p)
-		if err != nil {
-			return err
-		}
-	}
-
-	// try vertcoin regtest
-	if !lnutil.NopeString(conf.Rtvtchost) {
-		p := &coinparam.VertcoinRegTestParams
-		resync := false
-		conf.Tip = p.StartHeight
-		if conf.Resync == "rtvtc" {
-			if conf.Tip < 1 {
-				conf.Tip = 1
-			}
-			resync = true
-		}
-
-		err = node.LinkBaseWallet(
-			key, consts.BitcoinRegtestBHeight, resync, conf.Tower,
-			conf.Rtvtchost, conf.ChainProxyURL, p)
-		if err != nil {
-			return err
-		}
-	}
 	return nil
 }
 
