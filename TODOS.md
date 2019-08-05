@@ -21,3 +21,9 @@ And also try `grep` with "TODO:"
         * fix SPVCon.incomingMessageHandler
     + `bech32.Encode("ln"` can be a good start point
 + failure loading exchange rates: open rates.json: no such file or directory
++ payment channel walkthrough in `qln`
+    * open a channel: `fund.go`
+    * send payment: `pushpull.go`
+    * close a channel: `close.go` and `break.go`
+    * htlc: `htlc.go`
+    * multi-hop: `multihop.go`
