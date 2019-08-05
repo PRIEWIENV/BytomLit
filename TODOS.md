@@ -12,9 +12,7 @@ And also try `grep` with "TODO:"
     * fix resync
     + __sync bytom height?__
         * fix wallit
-        * fix SPVCon.incomingMessageHandler
-        * fix SPVCon.outgoingMessageHandler
-        * fix SPVCon.fPositiveHandler
+        * rpc get best_height
     + `bech32.Encode("ln"` can be a good start point
 + failure loading exchange rates: open rates.json: no such file or directory
 + payment channel walkthrough in `qln`
