@@ -2,6 +2,7 @@ package util
 
 import (
 	"encoding/json"
+	"errors"
 )
 
 // Node can invoke the api which provide by the full node server

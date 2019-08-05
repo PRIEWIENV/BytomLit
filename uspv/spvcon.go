@@ -8,6 +8,7 @@ import (
 	"github.com/mit-dci/lit/btcutil/chaincfg/chainhash"
 	"github.com/mit-dci/lit/coinparam"
 	"github.com/mit-dci/lit/lnutil"
+	"github.com/mit-dci/lit/util"
 	"github.com/mit-dci/lit/wire"
 )
 
@@ -88,4 +89,6 @@ type SPVCon struct {
 	// sync modes, but when in the idle state has a "true" in it.
 	inWaitState   chan bool
 	randomNodesOK bool
+
+	utilNodes []*util.Node
 }
