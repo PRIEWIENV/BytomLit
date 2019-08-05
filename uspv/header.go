@@ -128,6 +128,15 @@ func (s *SPVCon) GetHeaderAtHeight(h int32) (*wire.BlockHeader, error) {
 
 // GetHeaderTipHeight gives back a header at the specified height.
 func (s *SPVCon) GetHeaderTipHeight() int32 {
+	// TODO: fix here
+	height, err := s.UtilNodes[0].GetBlockCnt()
+	if err != nil {
+		logging.Errorf("UtilNodes[0].GetBlockCnt() error: %s", err.Error())
+		return 0
+	}
+
+	return height
+
 	s.headerMutex.Lock() // start header file ops
 	defer s.headerMutex.Unlock()
 	info, err := s.headerFile.Stat()
