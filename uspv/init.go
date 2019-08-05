@@ -87,8 +87,6 @@ func (s *SPVCon) DialNode(listOfNodes []string) error {
 		logging.Infof("Attempting connection to node at %s\n",
 			conString)
 
-		// TODO: assign node here
-
 		if s.ProxyURL != "" {
 			logging.Infof("Attempting to connect via proxy %s", s.ProxyURL)
 			d, err := proxy.SOCKS5("tcp", s.ProxyURL, nil, proxy.Direct)
@@ -100,6 +98,8 @@ func (s *SPVCon) DialNode(listOfNodes []string) error {
 			d := net.Dialer{Timeout: 2 * time.Second}
 			s.con, err = d.Dial(conMode, conString)
 		}
+
+		// TODO: assign node here
 
 		if err != nil {
 			if i != len(listOfNodes)-1 {
