@@ -14,9 +14,6 @@ And also try `grep` with "TODO:"
         * fix SPVCon.Connect
                 * SPVCon.Handshake
                     * connected to 9888 successfully
-                    * writing failed, need to change wire to rpc
-                        - `wrote 134 byte version message to 127.0.0.1:9888` 
-                        - `ReadMessage: message payload is too large - header indicates 1902465568 bytes, but max message payload is 33554432 bytes.` 
         * fix wallit
         * fix SPVCon.incomingMessageHandler
     + `bech32.Encode("ln"` can be a good start point
