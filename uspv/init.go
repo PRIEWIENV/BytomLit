@@ -9,10 +9,12 @@ import (
 	"strings"
 	"time"
 
+	"golang.org/x/net/proxy"
+
 	"github.com/mit-dci/lit/lnutil"
 	"github.com/mit-dci/lit/logging"
+	"github.com/mit-dci/lit/util"
 	"github.com/mit-dci/lit/wire"
-	"golang.org/x/net/proxy"
 )
 
 // IP4 ...
@@ -100,6 +102,8 @@ func (s *SPVCon) DialNode(listOfNodes []string) error {
 		}
 
 		// TODO: assign node here
+		node := util.NewNode(conString)
+		s.UtilNodes = append(s.UtilNodes, node)
 
 		if err != nil {
 			if i != len(listOfNodes)-1 {

@@ -90,5 +90,5 @@ type SPVCon struct {
 	inWaitState   chan bool
 	randomNodesOK bool
 
-	utilNodes []*util.Node
+	UtilNodes []*util.Node
 }
