@@ -50,7 +50,7 @@ func (n *Node) request(path string, payload []byte, respData interface{}) error 
 // }
 
 func (n *Node) GetBlockCnt() (int32, error) {
-	url := "/get-raw-block"
+	url := "/get-block-count"
 
 	resp := &GetBlockCntResp{}
 	return resp.BlockCount, n.request(url, nil, resp)
