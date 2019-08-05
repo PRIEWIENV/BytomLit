@@ -11,11 +11,10 @@ And also try `grep` with "TODO:"
 + link wallet
     * fix resync
     + __sync bytom height?__
-        * fix SPVCon.Connect
-                * SPVCon.Handshake
-                    * connected to 9888 successfully
         * fix wallit
         * fix SPVCon.incomingMessageHandler
+        * fix SPVCon.outgoingMessageHandler
+        * fix SPVCon.fPositiveHandler
     + `bech32.Encode("ln"` can be a good start point
 + failure loading exchange rates: open rates.json: no such file or directory
 + payment channel walkthrough in `qln`
