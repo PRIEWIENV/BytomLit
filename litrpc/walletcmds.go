@@ -60,8 +60,7 @@ func (r *LitRPC) Balance(args *NoArgs, reply *BalanceReply) error {
 		cbr.SyncHeight = wal.CurrentHeight()
 
 		// TODO:
-		fmt.Println("calllllll getBalance")
-		fmt.Println("Height: %d\n", cbr.SyncHeight)
+		fmt.Println("Height: ", cbr.SyncHeight)
 
 		// also current fee rate
 		cbr.FeeRate = wal.Fee()

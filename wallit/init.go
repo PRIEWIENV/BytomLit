@@ -44,9 +44,11 @@ func NewWallit(
 
 	if strings.Contains(spvhost, "https") {
 		w.Hook = new(powless.APILink)
+		fmt.Println("powless.APILink", spvhost)
 	} else {
 		// no https; use uSPV for chainhook
 		w.Hook = new(uspv.SPVCon)
+		fmt.Println("uspv.SPVCon", spvhost)
 	}
 
 	wallitdbname := filepath.Join(wallitpath, "utxo.db")
