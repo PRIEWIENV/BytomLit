@@ -115,6 +115,9 @@ func (s *SPVCon) GetHeaderAtHeight(h int32) (*types.BlockHeader, error) {
 		return nil, err
 	}
 
+	// headerHash := bh.Hash()
+	// fmt.Println("bh:", headerHash.String())
+
 	return bh, nil
 
 	/*
