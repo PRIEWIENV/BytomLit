@@ -126,18 +126,6 @@ const (
 
 	// TestNet3 represents the test network (version 3).
 	TestNet3 BitcoinNet = 0x0709110b
-
-	// SimNet represents the simulation test network.
-	SimNet BitcoinNet = 0x12141c16
-
-	// BC2Net represents the BC2 test network
-	BC2Net BitcoinNet = 0xcaa5afea
-
-	// BC2Net represents the BC2 test network
-	LiteTest4Net BitcoinNet = 0xf1c8d2fd
-
-	// LiteRegNet is the litecoin regression test network (distinct from testnet4)
-	LiteRegNet BitcoinNet = 0xdab5bffa
 )
 
 // bnStrings is a map of bitcoin networks back to their constant names for
@@ -145,9 +133,7 @@ const (
 var bnStrings = map[BitcoinNet]string{
 	MainNet:  "MainNet",
 	TestNet:  "TestNet",
-	TestNet3: "TestNet3",
-	SimNet:   "SimNet",
-	BC2Net:   "BC2Net",
+	TestNet3: "TestNet3"
 }
 
 // String returns the BitcoinNet in human-readable form.

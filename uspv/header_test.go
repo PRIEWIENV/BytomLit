@@ -23,7 +23,7 @@ func randomHex(n int) string {
 func TestMoreWork(t *testing.T) {
 	var a []*wire.BlockHeader
 	var b []*wire.BlockHeader
-	p := &coinparam.BitcoinParams
+	p := &coinparam.BytomParams
 	// 0000000000dd4dd73d78e8fd29ba2fd2ed618bd6fa2ee92559f5 42fdb26e7c1d
 	for j := 0; j < 2016; j++ {
 		header := "0000000000dd4dd73d78e8fd29ba2fd2ed618bd6fa2ee92559f5" + randomHex(6)

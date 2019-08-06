@@ -8,8 +8,8 @@ import (
 )
 
 // MainNetParams defines the network parameters for the main Bitcoin network.
-var BitcoinParams = Params{
-	Name:          "bitcoin",
+var BytomParams = Params{
+	Name:          "bytom",
 	NetMagicBytes: 0xd9b4bef9,
 	DefaultPort:   "9888",
 	DNSSeeds:      []string{},
@@ -52,7 +52,7 @@ var BitcoinParams = Params{
 	PubKeyHashAddrID: 0x00, // starts with 1
 	ScriptHashAddrID: 0x05, // starts with 3
 	PrivateKeyID:     0x80, // starts with 5 (uncompressed) or K (compressed)
-	Bech32Prefix:     "bc", // starts with bc1
+	Bech32Prefix:     "tm", // starts with bc1
 
 	// BIP32 hierarchical deterministic extended key magics
 	HDPrivateKeyID: [4]byte{0x04, 0x88, 0xad, 0xe4}, // starts with xprv

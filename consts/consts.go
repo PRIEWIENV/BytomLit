@@ -15,8 +15,7 @@ const (
 	MaxTxLen               = 100000           // maximum number of tx's that can be ingested at once
 	JusticeFee             = int64(5000)      // if someone spends the com tx, pay a high justice fee
 	BitcoinRegtestBHeight  = 120              // height at which you want regtest sync to start
-	BitcoinTestnet3BHeight = 1256000          // height at which testnet3 sync starts
-	VertcoinTestnetBHeight = 25000            // height at which vertcoin testnet sync starts
+	BitcoinTestnet3BHeight = 50000          // height at which testnet3 sync starts
 	DualFundFee            = 50
 	MaxSendAmt             = 1 << 30 // maximum amount that can be sent through a chan
 	MaxKeyLimit            = 1 << 30 // maximum number of keys that lit can store

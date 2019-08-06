@@ -89,11 +89,11 @@ func newConfigParser(conf *litConfig, options flags.Options) *flags.Parser {
 
 // TODO: fix resync
 func linkWallets(node *qln.LitNode, key *[32]byte, conf *litConfig) error {
-	p := &coinparam.BitcoinParams
+	p := &coinparam.BytomParams
 	resync := false
 	// resync := false
 	// conf.Tip = consts.BitcoinTestnet3BHeight
-	// if conf.Resync == "bm" {
+	// if conf.Resync == "tm" {
 	// 	if conf.Tip < consts.BitcoinTestnet3BHeight {
 	// 		conf.Tip = consts.BitcoinTestnet3BHeight
 	// 	}

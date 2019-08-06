@@ -44,7 +44,7 @@ func (u *PorTxo) AddWIF(w btcutil.WIF) error {
 		// assume mainnet
 		// generate address from wif key
 		adr, err = btcutil.NewAddressPubKeyHash(
-			btcutil.Hash160(w.SerializePubKey()), &coinparam.BitcoinParams)
+			btcutil.Hash160(w.SerializePubKey()), &coinparam.BytomParams)
 		if err != nil {
 			return err
 		}
