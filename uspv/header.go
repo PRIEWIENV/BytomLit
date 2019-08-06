@@ -17,6 +17,7 @@ import (
 	"github.com/mit-dci/lit/btcutil/blockchain"
 
 	"github.com/mit-dci/lit/coinparam"
+	"github.com/mit-dci/lit/util"
 	"github.com/mit-dci/lit/wire"
 
 	"github.com/bytom/protocol/bc/types"
@@ -108,7 +109,14 @@ func checkProofOfWork(header wire.BlockHeader, p *coinparam.Params, height int32
 // func (s *SPVCon) GetHeaderAtHeight(h int32) (*wire.BlockHeader, error) {
 func (s *SPVCon) GetHeaderAtHeight(h int32) (*types.BlockHeader, error) {
 	// TODO: fix here
-	return nil, nil
+	bh, err := s.UtilNodes[0].GetBlockHeader(&util.BlockReq{BlockHeight: uint64(h)})
+	if err != nil {
+		logging.Errorf("UtilNodes[0].GetBlockCnt() error: %s", err.Error())
+		return nil, err
+	}
+
+	return bh, nil
+
 	/*
 		s.headerMutex.Lock()
 		defer s.headerMutex.Unlock()
