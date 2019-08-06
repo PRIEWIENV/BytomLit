@@ -10,7 +10,7 @@ import (
 // MainNetParams defines the network parameters for the main Bitcoin network.
 var BytomParams = Params{
 	Name:          "bytom",
-	NetMagicBytes: 0xd9b4bef9,
+	NetMagicBytes: 0x50545448,
 	DefaultPort:   "9888",
 	DNSSeeds:      []string{},
 

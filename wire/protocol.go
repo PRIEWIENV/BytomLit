@@ -126,6 +126,8 @@ const (
 
 	// TestNet3 represents the test network (version 3).
 	TestNet3 BitcoinNet = 0x0709110b
+
+	BytomTestNet BitcoinNet = 0x50545448
 )
 
 // bnStrings is a map of bitcoin networks back to their constant names for
@@ -134,6 +136,7 @@ var bnStrings = map[BitcoinNet]string{
 	MainNet:  "MainNet",
 	TestNet:  "TestNet",
 	TestNet3: "TestNet3",
+	BytomTestNet: "BytomTestNet",
 }
 
 // String returns the BitcoinNet in human-readable form.

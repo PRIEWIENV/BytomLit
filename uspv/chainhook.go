@@ -1,7 +1,6 @@
 package uspv
 
 import (
-	"fmt"
 	"path/filepath"
 
 	"github.com/mit-dci/lit/logging"
@@ -127,19 +126,19 @@ func (s *SPVCon) Start(
 	if err != nil {
 		return nil, nil, err
 	}
-	fmt.Println("DEBUG: ", s.CurrentHeightChan)
+	
 	err = s.Connect(host)
 	if err != nil {
 		logging.Errorf("Can't connect to host %s\n", host)
 		return nil, nil, err
 	}
-	fmt.Println("DEBUG: ", s.CurrentHeightChan)
+	
 	err = s.AskForHeaders()
 	if err != nil {
 		logging.Errorf("AskForHeaders error\n")
 		return nil, nil, err
 	}
-	fmt.Println("DEBUG: ", s.CurrentHeightChan)
+	
 	return s.TxUpToWallit, s.CurrentHeightChan, nil
 }
 
