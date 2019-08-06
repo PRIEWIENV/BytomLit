@@ -11,7 +11,9 @@ And also try `grep` with "TODO:"
 + link wallet
     + fix wallit
     * fix resync
+        - diy conf.Tip
         - sync height
+            + nd.HeightEventHandler(nd.SubWallet[WallitIdx].LetMeKnowHeight())
     * walkthrough
         + faucet
     * merkle
