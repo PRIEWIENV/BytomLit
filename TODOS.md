@@ -11,6 +11,7 @@ And also try `grep` with "TODO:"
 + link wallet
     + fix wallit
     * fix resync
+    * walkthrough
     * merkle
     * LitNode.AutoReconnect()
     + `bech32.Encode("ln"` can be a good start point
