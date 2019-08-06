@@ -65,8 +65,8 @@ func NewWallit(
 	}
 	hookFail := false
 	logging.Infof("DB corrected height %d\n", height)
-	// TODO: fix here
 	incomingTx, incomingBlockheight, err := w.Hook.Start(height, spvhost, wallitpath, proxyURL, p)
+
 	if err != nil {
 		hookFail = true
 		logging.Errorf("NewWallit Hook.Start crash  %s ", err.Error())
@@ -126,6 +126,7 @@ func (w *Wallit) TxHandler(incomingTxAndHeight chan lnutil.TxAndHeight) {
 	}
 }
 
+// TODO:
 func (w *Wallit) HeightHandler(incomingHeight chan int32) {
 	var prevHeight int32
 	for {

@@ -13,7 +13,7 @@ And also try `grep` with "TODO:"
     * fix resync
         - diy conf.Tip
         - sync height
-            + Wallit.SetDBSyncHeight
+            + Wallit.HeightHandler
             + nd.HeightEventHandler(nd.SubWallet[WallitIdx].LetMeKnowHeight())
     + `bech32.Encode("ln"` can be a good start point
     + `ReadMessageWithEncodingN error.  Disconnecting from given peer. ReadMessage: message payload is too large - header indicates 1902465568 bytes, but max message payload is 33554432 bytes.`
