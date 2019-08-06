@@ -91,14 +91,13 @@ func newConfigParser(conf *litConfig, options flags.Options) *flags.Parser {
 func linkWallets(node *qln.LitNode, key *[32]byte, conf *litConfig) error {
 	p := &coinparam.BytomParams
 	resync := false
-	// resync := false
-	// conf.Tip = consts.BitcoinTestnet3BHeight
-	// if conf.Resync == "tm" {
-	// 	if conf.Tip < consts.BitcoinTestnet3BHeight {
-	// 		conf.Tip = consts.BitcoinTestnet3BHeight
-	// 	}
-	// 	resync = true
-	// }
+	conf.Tip = consts.BitcoinTestnet3BHeight
+	if conf.Resync == "reg" {
+		if conf.Tip < consts.BitcoinTestnet3BHeight {
+			conf.Tip = consts.BitcoinTestnet3BHeight
+		}
+		resync = true
+	}
 	return node.LinkBaseWallet(
 		key, conf.Tip, resync, conf.Tower,
 		conf.Bmhost, conf.ChainProxyURL, p)
