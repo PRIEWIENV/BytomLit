@@ -271,7 +271,7 @@ func (s *SPVCon) Connect(remoteNode string) error {
 	s.fPositives = make(chan int32, 4000) // a block full, approx
 	s.inWaitState = make(chan bool, 1)
 	// TODO:
-	// go s.fPositiveHandler()
+	go s.fPositiveHandler()
 
 	// if s.HardMode { // what about for non-hard?  send filter?
 	// 	Ignore filters now; switch to filters fed to SPVcon from TS
