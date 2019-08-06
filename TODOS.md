@@ -12,6 +12,7 @@ And also try `grep` with "TODO:"
     + fix wallit
     * fix resync
     * merkle
+    * LitNode.AutoReconnect()
     + `bech32.Encode("ln"` can be a good start point
 + failure loading exchange rates: open rates.json: no such file or directory
 + payment channel walkthrough in `qln`
