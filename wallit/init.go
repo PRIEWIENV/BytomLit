@@ -44,7 +44,6 @@ func NewWallit(
 
 	if strings.Contains(spvhost, "https") {
 		w.Hook = new(powless.APILink)
-		fmt.Println("powless.APILink", spvhost)
 	} else {
 		// no https; use uSPV for chainhook
 		w.Hook = new(uspv.SPVCon)
@@ -68,6 +67,7 @@ func NewWallit(
 	hookFail := false
 	logging.Infof("DB corrected height %d\n", height)
 	incomingTx, incomingBlockheight, err := w.Hook.Start(height, spvhost, wallitpath, proxyURL, p)
+	fmt.Println(incomingBlockheight)
 
 	if err != nil {
 		hookFail = true
