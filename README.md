@@ -1,46 +1,178 @@
-# An Anti-Wormhole Payment Channel Network on Bytom
+# Bytomlit - a lightning node on Bytom using PHTLC
 
-A payment channel network daemon based on Bytom using Path Hashed Time Locked Contract (PHTLC) instead of Hashed Time Locked Contract (HTLC), which is robust against wormhole attack.
+Under development, not for use with real money.
 
-## Introduction
+## Setup
 
-A payment channel is a two-party off-chain protocol, by which multiple micropayment can be performed between two given on-chain nodes instatntly. A payment channel network is a multi-party off-chain protocol to perform payment between any two on-chain nodes by utilizing multiple existing payment channels as long as there exists at least one path connecting the two nodes.
+### Prerequisites
 
-### Hashed Time Locked Contract (HTLC)
+* [Git](https://git-scm.com/)
 
-Assume a collision-resistant hash function `H()` and the condition `R` is chosen uniformly.
-`HTLC (Alice, Bob, y, x, t)` is defined as:
-- If Bob produces the condition `R` such that `H(R) = y` before `t` days, Alice pays Bob `x` bitcoins.
-- If `t` days elapse, Alice gets back `x` bitcoins.
+* [Go](https://golang.org/doc/install)
 
-### Payment Channel Networks (PCNs)
+* make
 
-![](images/pcn.jpg)
+* (Optional, for full test suite) Python 3 + `requests` library from PyPI
 
-### Wormhole Attack in PCNs
+### Downloading
 
-The wormhole attack in PCNs is first analyzed formally by [MMSK18](https://eprint.iacr.org/2018/472.pdf), in which the authors using a novel cryptographic primitive -- anonymous multi-hop locks (AMHLs) to address this problem.
+Clone the repo from git 
 
-![](images/wormhole_attack.png)
+```bash
+git clone https://github.com/mit-dci/lit
+cd lit
+```
+or `go get` it
+```go
+go get -v github.com/mit-dci/lit
+```
 
-## Path Hashed Time Locked Contract (PHTLC) Scheme
+### Installation
 
-Assume a collision-resistant hash function `H()` and the condition `R` is chosen uniformly.
-`PHTLC (Alice, Bob, y, x, t, m, U)` is defined as:
+#### Linux, macOS, Cygwin, etc.
 
-- If Bob produces the condition `R` such that `H(R) = y` and also provides aggregated signatures on message `m` signed by all the users in `U` before `t` days, Alice pays Bob `x` bitcoins.
-- If `t` days elapse, Alice gets back `x` bitcoins.
+You can either use Go's built-in dependency management and build tool
+```go
+cd {GOPATH}/src/github.com/mit-dci/lit
+go get -v ./...
+go build
+```
+or use the Makefile
+```bash
+make # or make all
+```
 
-## How PHTLCs Protect PCNs
+To run the python integration tests (which requires `bitcoind`), run `make test with-python=false`
 
-For example, Alice wants to pay 10 bitcoins to Edward, through Bob, Carol and Dave. Each intermediary will charge 1 bitcoin as forwarding fee, so Alice need to start with 13 bitcoins. Here are the steps to perform a payment from Alice to Edward.
+#### Windows
 
-1. Edward sends `y = H(R)` to Alice.
-2. Alice finds out the routing path `π: Alice -> Bob -> Carol -> Dave -> Edward` and embeds `π` into message `m`. Alice signs `π` and instead of adding a classical HTLC, she adding a PHTLC as `PHTLC_AB (Alice, Bob, y, 13, 8, m, {Bob, Carol, Dave, Edward})` to the channel between Alice and Bob and computes `σ_A = sig_A(π)`. Alice sends `σ_A` and `π` to Bob.
-3. Upon receiving `PHTLC_AB`, `σ_A` and `π`, Bob adds `PHTLC_BC (Bob, Carol, y, 12, 6, m, {Carol, Dave, Edward})` to the channel between Bob and Carol and computes `σ_AB = aggr(σ_A, sig_B(π))`. Bob sends `σ_AB` and `π` to Carol.
-4. Upon receiving `PHTLC_BC`, `σ_AB` and `π`, Carol adds `PHTLC_CD (Carol, Dave, y, 11, 4, m, {Dave, Edward})` to the channel between Carol and Dave  and computes `σ_ABC = aggr(σ_AB, sig_C(π))`. Carol sends `σ_ABC` and `π` to Dave.
-5. Upon receiving `PHTLC_CD`, `σ_ABC` and `π`, Dave adds `PHTLC_DE (Dave, Edward, y, 10, 2, m, {Edward})` to the channel between Dave and Edward and computes `σ_ABCD = aggr(σ_ABC, sig_D(π))`. Dave sends `σ_ABCD` and `π` to Edward.
-6. Upon receiving `PHTLC_DE`, `σ_ABCD` and `π`, Edward provides `R` and his signature on `m` to Dave and fulfills `PHTLC_DE`. Edward gets 10 bitcoins from Dave.
-7. Upon receiving `R`, Dave provides `R`, Edward's signature and his signature to Carol and fulfills `PHTLC_CD`. Dave gets 11 bitcoins from Carol.
-8. Upon receiving `R`, Carol provides `R`, Dave's signature, Edward's signature and her signature to Bob and fulfills `PHTLC_BC`. Carol gets 12 bitcoins from Bob.
-9. Upon receiving `R`, Dave provides `R`, Carol's signature, Dave's signature, Edward's signature and his signature to Alice and fulfills `PHTLC_AB`. Bob gets 13 bitcoins from Alice.
+Install [Cygwin](http://www.cygwin.com) and follow the setup instructions or download prebuilt binaries from
+
+1. Make sure that environmental variable `%GOPATH%` is initizlized correctly.
+
+2. Download required dependencies and then build with:
+
+```
+go get -v ./...
+cd %GOPATH%\src\github.com\mit-dci\lit
+go build -v .
+go build -v .\cmd\lit-af
+```
+
+### Running lit
+
+The below command will run Lit on the Bitcoin testnet3 network
+
+(Note: Windows users should take off `./` but need to change `lit` to `lit.exe`)
+
+```bash
+./lit --tn3=true
+```
+
+The words `yup, yes, y, true, 1, ok, enable, on` can be used to specify that Lit
+automatically connect to peers fetched from a list of DNS seeds. It can also be replaced by
+the address of the node you wish to connect to. For example for the btc testnet3:
+
+```bash
+./lit --tn3=localhost
+```
+
+It will use default port for different nodes. See the "Command line arguments" section.
+
+### Packaging
+
+You can make an archive package for any distribution by doing:
+
+```
+./build/releasebuild.sh <os> <arch>
+```
+
+and it will be placed in `build/_releasedir`.  It should support any OS that
+Go and lit's dependencies support.  In place of `windows` use `win` and
+in place of `386` use `i386`.
+
+You can also package for Linux, macOS, and Windows in both amd64 and
+i386 architectures by running `make package`. (NOTE: macOS is amd64 only)
+
+Running `./build/releasebuild.sh clean` cleans the directories it generates.
+
+## Using Lightning
+
+Once you are done setting up lit, you can read about
+- [the different command line arguments](#command-line-arguments)
+- [the various folders](#folders) or
+- [checkout the Walkthrough](./WALKTHROUGH.md)
+
+## Contributing
+
+Pull Requests and Issues are most welcome, checkout [Contributing](./CONTRIBUTING.md) to get started.
+
+## Command line arguments
+
+When starting lit, the following command line arguments are available.  The
+following commands may also be specified in `lit.conf` which is automatically
+generated on startup with `tn3=1` by default.
+
+#### Connecting to networks
+
+| Arguments                   | Details                                                      | Default Port  |
+| --------------------------- |--------------------------------------------------------------| ------------- |
+| `--tn3 <nodeHostName>`      | connect to `nodeHostName`, which is a bitcoin testnet3 node. | 18333         |
+| `--reg <nodeHostName>`      | connect to `nodeHostName`, which is a bitcoin regtest node.  | 18444         |
+| `--lt4 <nodeHostName>`      | connect to `nodeHostName`, which is a litecoin testnet4 node.| 19335         |
+
+#### Other settings
+
+| Arguments                        | Details                                                                                                                                                                |
+| ---------------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `-v` or `--verbose`              | Verbose; log everything to stdout as well as the lit.log file.  Lots of text.                                                                                          |
+| `--dir <folderPath>`             | Use `folderPath` as the directory.  By default, saves to `~/.lit/`.                                                                                                    |
+| `-p` or `--rpcport <portNumber>` | Listen for RPC clients on port `portNumber`.  Defaults to `8001`.  Useful when you want to run multiple lit nodes on the same computer (also need the `--dir` option). |
+| `-r` or `--reSync`               | Try to re-sync to the blockchain.                                                                                                                                      |
+
+## Folders
+
+| Folder Name  | Details                                                                                                                                  |
+|:-------------|:-----------------------------------------------------------------------------------------------------------------------------------------|
+| `bech32`     | Util for the Bech32 format                                                                                                             |
+| `btcutil`    | Bitcoin-specific libraries                                                                                                          |
+| `build`      | Tools used for building Lit                                                                                                              |
+| `cmd`        | Has some rpc client code to interact with the lit node.  Not much there yet                                                              |
+| `coinparam`  | Information and other constants for identifying currencies                                                                               |
+| `consts`     | Global constants                                                                                                                         |
+| `crypto`     | Utility cryptographic libraries                                                                                                    |
+| `docs`       | Writeups for setting up things and screenshots                 |
+| `elkrem`     | A hash-tree for storing `log(n)` items instead of n                                                                                      |
+| `litrpc`     | Websockets based RPC connection                                                                                                           |
+| `lndc`       | Lightning network data connection -- send encrypted / authenticated messages between nodes                                               |
+| `lnutil`     | Widely used utility functions                                                                                                       |
+| `portxo`     | Portable utxo format, exchangable between node and base wallet (or between wallets).  Should make this into a BIP once it's more stable. |
+| `powless`    | Introduces a web API chainhook in addition to the uspv one                                                                               |
+| `qln`        | A quick channel implementation with databases.  Doesn't do multihop yet.                                                                 |
+| `sig64`      | Library to make signatures 64 bytes instead of 71 or 72 or something                                                                     |
+| `snap`       | Snapcraft metadata                                                                                                                       |
+| `test`       | Python Integration tests                                                                                                                        |
+| `uspv`       | Deals with the network layer, sending network messages and filtering what to hand over to `wallit`                                       |
+| `wallit`     | Deals with storing and retrieving utxos, creating and signing transactions                                                               |
+| `watchtower` | Unlinkable outsourcing of channel monitoring                                                                                             |
+| `wire`       | Tools for working with binary data structures in Bitcoin                                                                                 |
+
+### Hierarchy of packages
+
+One instance of lit has one litNode (package qln).
+
+LitNodes manage lndc connections to other litnodes, manage all channels, rpc listener, and the ln.db.  Litnodes then initialize and contol wallits.
+
+A litNode can have multiple wallits; each must have different params.  For example, there can be a testnet3 wallit, and a regtest wallit.  Eventually it might make sense to support a root key per wallit, but right now the litNode gives a rootPrivkey to each wallet on startup.  Wallits each have a db file which tracks utxos, addresses, and outpoints to watch for the upper litNode.  Wallits do not directly do any network communication.  Instead, wallits have one or more chainhooks; a chainhook is an interface that talks to the blockchain.
+
+One package that implements the chainhook interface is uspv.  Uspv deals with headers, wire messages to fullnodes, filters, and all the other mess that is contemporary SPV.
+
+(in theory it shouldn't be too hard to write a package that implements the chainhook interface and talks to some block explorer.  Maybe if you ran your own explorer and authed and stuff that'd be OK.)
+
+#### Dependency graph
+
+![Dependency Graph](deps.png)
+
+## License
+
+[MIT](https://github.com/mit-dci/lit/blob/master/LICENSE)
