@@ -107,6 +107,7 @@ func checkProofOfWork(header wire.BlockHeader, p *coinparam.Params, height int32
 // GetHeaderAtHeight gives back a header at the specified height
 // func (s *SPVCon) GetHeaderAtHeight(h int32) (*wire.BlockHeader, error) {
 func (s *SPVCon) GetHeaderAtHeight(h int32) (*types.BlockHeader, error) {
+	// TODO: fix here
 	return nil, nil
 	/*
 		s.headerMutex.Lock()
