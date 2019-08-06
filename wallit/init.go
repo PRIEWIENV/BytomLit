@@ -47,7 +47,6 @@ func NewWallit(
 	} else {
 		// no https; use uSPV for chainhook
 		w.Hook = new(uspv.SPVCon)
-		fmt.Println("uspv.SPVCon", spvhost)
 	}
 
 	wallitdbname := filepath.Join(wallitpath, "utxo.db")
@@ -67,7 +66,6 @@ func NewWallit(
 	hookFail := false
 	logging.Infof("DB corrected height %d\n", height)
 	incomingTx, incomingBlockheight, err := w.Hook.Start(height, spvhost, wallitpath, proxyURL, p)
-	fmt.Println(incomingBlockheight)
 
 	if err != nil {
 		hookFail = true

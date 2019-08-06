@@ -346,11 +346,12 @@ func ReadMessageWithEncodingN(r io.Reader, pver uint32, btcnet BitcoinNet,
 
 	// Create struct of appropriate message type based on the command.
 	msg, err := makeEmptyMessage(command)
-	if err != nil {
-		discardInput(r, hdr.length)
-		return totalBytes, nil, nil, messageError("ReadMessage",
-			err.Error())
-	}
+	// TODO: fix the err
+	// if err != nil {
+	// 	discardInput(r, hdr.length)
+	// 	return totalBytes, nil, nil, messageError("ReadMessage",
+	// 		err.Error())
+	// }
 
 	// Check for maximum length based on the message type as a malicious client
 	// could otherwise create a well-formed header and set the length to max
