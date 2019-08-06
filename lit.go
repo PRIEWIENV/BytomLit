@@ -10,6 +10,7 @@ import (
 	"github.com/mit-dci/lit/logging"
 
 	"github.com/mit-dci/lit/coinparam"
+	consts "github.com/mit-dci/lit/consts"
 	"github.com/mit-dci/lit/litrpc"
 	"github.com/mit-dci/lit/qln"
 
@@ -92,7 +93,7 @@ func linkWallets(node *qln.LitNode, key *[32]byte, conf *litConfig) error {
 	p := &coinparam.BytomParams
 	resync := false
 	conf.Tip = consts.BitcoinTestnet3BHeight
-	if conf.Resync == "reg" {
+	if conf.Resync == "bm" {
 		if conf.Tip < consts.BitcoinTestnet3BHeight {
 			conf.Tip = consts.BitcoinTestnet3BHeight
 		}
