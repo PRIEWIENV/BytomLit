@@ -15,6 +15,9 @@ And also try `grep` with "TODO:"
     * merkle
     * LitNode.AutoReconnect()
     + `bech32.Encode("ln"` can be a good start point
+- lit-af
+    + addresses
+    + Type: 0   Sync Height: 0  FeeRate: 80 Utxo: 0 WitConf: 0 Channel: 0
 + failure loading exchange rates: open rates.json: no such file or directory
 + payment channel walkthrough in `qln`
     * open a channel: `fund.go`
