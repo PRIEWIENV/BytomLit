@@ -291,7 +291,6 @@ func (s *SPVCon) IngestHeaders(m *wire.MsgHeaders) (bool, error) {
 	return true, nil
 }
 
-// TODO:
 // AskForHeaders ...
 func (s *SPVCon) AskForHeaders() error {
 	ghdr := wire.NewMsgGetHeaders()
