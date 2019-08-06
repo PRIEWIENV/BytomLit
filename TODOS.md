@@ -13,6 +13,7 @@ And also try `grep` with "TODO:"
     * fix resync
         - diy conf.Tip
         - sync height
+            + CurrentHeightChan
             + Wallit.HeightHandler
             + nd.HeightEventHandler(nd.SubWallet[WallitIdx].LetMeKnowHeight())
     + `bech32.Encode("ln"` can be a good start point
