@@ -18,6 +18,8 @@ import (
 
 	"github.com/mit-dci/lit/coinparam"
 	"github.com/mit-dci/lit/wire"
+
+	"github.com/bytom/protocol/bc/types"
 )
 
 func min(a, b int) int {
@@ -103,27 +105,31 @@ func checkProofOfWork(header wire.BlockHeader, p *coinparam.Params, height int32
 }
 
 // GetHeaderAtHeight gives back a header at the specified height
-func (s *SPVCon) GetHeaderAtHeight(h int32) (*wire.BlockHeader, error) {
-	s.headerMutex.Lock()
-	defer s.headerMutex.Unlock()
+// func (s *SPVCon) GetHeaderAtHeight(h int32) (*wire.BlockHeader, error) {
+func (s *SPVCon) GetHeaderAtHeight(h int32) (*types.BlockHeader, error) {
+	return nil, nil
+	/*
+		s.headerMutex.Lock()
+		defer s.headerMutex.Unlock()
 
-	// height is reduced by startHeight
-	h = h - s.Param.StartHeight
+		// height is reduced by startHeight
+		h = h - s.Param.StartHeight
 
-	// seek to that header
-	_, err := s.headerFile.Seek(int64(80*h), os.SEEK_SET)
-	if err != nil {
-		logging.Error(err)
-		return nil, err
-	}
+		// seek to that header
+		_, err := s.headerFile.Seek(int64(80*h), os.SEEK_SET)
+		if err != nil {
+			logging.Error(err)
+			return nil, err
+		}
 
-	hdr := new(wire.BlockHeader)
-	err = hdr.Deserialize(s.headerFile)
-	if err != nil {
-		logging.Error(err)
-		return nil, err
-	}
-	return hdr, nil
+		hdr := new(wire.BlockHeader)
+		err = hdr.Deserialize(s.headerFile)
+		if err != nil {
+			logging.Error(err)
+			return nil, err
+		}
+		return hdr, nil
+	*/
 }
 
 // GetHeaderTipHeight gives back a header at the specified height.

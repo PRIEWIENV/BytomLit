@@ -101,7 +101,6 @@ func (s *SPVCon) DialNode(listOfNodes []string) error {
 			s.con, err = d.Dial(conMode, conString)
 		}
 
-		// TODO: assign node here
 		node := util.NewNode("http://" + conString)
 		s.UtilNodes = append(s.UtilNodes, node)
 
