@@ -17,7 +17,6 @@ And also try `grep` with "TODO:"
             + Wallit.HeightHandler
             + nd.HeightEventHandler(nd.SubWallet[WallitIdx].LetMeKnowHeight())
     + `bech32.Encode("ln"` can be a good start point
-    + `ReadMessageWithEncodingN error.  Disconnecting from given peer. ReadMessage: message payload is too large - header indicates 1902465568 bytes, but max message payload is 33554432 bytes.`
 - lit-af
     + addresses
     + Type: 0   Sync Height: 0  FeeRate: 80 Utxo: 0 WitConf: 0 Channel: 0

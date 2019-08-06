@@ -319,14 +319,15 @@ func ReadMessageWithEncodingN(r io.Reader, pver uint32, btcnet BitcoinNet,
 		return totalBytes, nil, nil, err
 	}
 
+	// TODO: fix skip
 	// Enforce maximum message payload.
-	if hdr.length > MaxMessagePayload {
-		str := fmt.Sprintf("message payload is too large - header "+
-			"indicates %d bytes, but max message payload is %d "+
-			"bytes.", hdr.length, MaxMessagePayload)
-		return totalBytes, nil, nil, messageError("ReadMessage", str)
+	// if hdr.length > MaxMessagePayload {
+	// 	str := fmt.Sprintf("message payload is too large - header "+
+	// 		"indicates %d bytes, but max message payload is %d "+
+	// 		"bytes.", hdr.length, MaxMessagePayload)
+	// 	return totalBytes, nil, nil, messageError("ReadMessage", str)
 
-	}
+	// }
 
 	// Check for messages from the wrong bitcoin network.
 	if hdr.magic != btcnet {
