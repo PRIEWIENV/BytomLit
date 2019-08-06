@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"io"
 
+	"github.com/bytom/protocol/bc"
 	"github.com/mit-dci/lit/btcutil/chaincfg/chainhash"
 )
 
@@ -31,13 +32,16 @@ const MaxBlockLocatorsPerMsg = 500
 // exponentially decrease the number of hashes the further away from head and
 // closer to the genesis block you get.
 type MsgGetBlocks struct {
-	ProtocolVersion    uint32
-	BlockLocatorHashes []*chainhash.Hash
-	HashStop           chainhash.Hash
+	ProtocolVersion uint32
+	// BlockLocatorHashes []*chainhash.Hash
+	// HashStop           chainhash.Hash
+	BlockLocatorHashes []*bc.Hash
+	HashStop           bc.Hash
 }
 
 // AddBlockLocatorHash adds a new block locator hash to the message.
-func (msg *MsgGetBlocks) AddBlockLocatorHash(hash *chainhash.Hash) error {
+// func (msg *MsgGetBlocks) AddBlockLocatorHash(hash *chainhash.Hash) error {
+func (msg *MsgGetBlocks) AddBlockLocatorHash(hash *bc.Hash) error {
 	if len(msg.BlockLocatorHashes)+1 > MaxBlockLocatorsPerMsg {
 		str := fmt.Sprintf("too many block locator hashes for message [max %v]",
 			MaxBlockLocatorsPerMsg)
@@ -69,8 +73,10 @@ func (msg *MsgGetBlocks) BtcDecode(r io.Reader, pver uint32, enc MessageEncoding
 
 	// Create a contiguous slice of hashes to deserialize into in order to
 	// reduce the number of allocations.
-	locatorHashes := make([]chainhash.Hash, count)
-	msg.BlockLocatorHashes = make([]*chainhash.Hash, 0, count)
+	// locatorHashes := make([]chainhash.Hash, count)
+	// msg.BlockLocatorHashes = make([]*chainhash.Hash, 0, count)
+	locatorHashes := make([]bc.Hash, count)
+	msg.BlockLocatorHashes = make([]*bc.Hash, 0, count)
 	for i := uint64(0); i < count; i++ {
 		hash := &locatorHashes[i]
 		err := readElement(r, hash)
@@ -140,10 +146,12 @@ func (msg *MsgGetBlocks) MaxPayloadLength(pver uint32) uint32 {
 // NewMsgGetBlocks returns a new bitcoin getblocks message that conforms to the
 // Message interface using the passed parameters and defaults for the remaining
 // fields.
-func NewMsgGetBlocks(hashStop *chainhash.Hash) *MsgGetBlocks {
+// func NewMsgGetBlocks(hashStop *chainhash.Hash) *MsgGetBlocks {
+func NewMsgGetBlocks(hashStop *bc.Hash) *MsgGetBlocks {
 	return &MsgGetBlocks{
-		ProtocolVersion:    ProtocolVersion,
-		BlockLocatorHashes: make([]*chainhash.Hash, 0, MaxBlockLocatorsPerMsg),
+		ProtocolVersion: ProtocolVersion,
+		// BlockLocatorHashes: make([]*chainhash.Hash, 0, MaxBlockLocatorsPerMsg),
+		BlockLocatorHashes: make([]*bc.Hash, 0, MaxBlockLocatorsPerMsg),
 		HashStop:           *hashStop,
 	}
 }

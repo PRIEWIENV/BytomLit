@@ -308,7 +308,7 @@ func (s *SPVCon) AskForHeaders() error {
 		return err
 	}
 
-	tHash := tipheader.BlockHash()
+	tHash := tipheader.Hash()
 	err = ghdr.AddBlockLocatorHash(&tHash)
 	if err != nil {
 		return err
@@ -322,7 +322,8 @@ func (s *SPVCon) AskForHeaders() error {
 		if err != nil {
 			return err
 		}
-		backhash := backhdr.BlockHash()
+		// backhash := backhdr.BlockHash()
+		backhash := backhdr.Hash()
 
 		err = ghdr.AddBlockLocatorHash(&backhash)
 		if err != nil {

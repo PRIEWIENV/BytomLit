@@ -9,6 +9,8 @@ import (
 	"io"
 
 	"github.com/mit-dci/lit/btcutil/chaincfg/chainhash"
+
+	"github.com/bytom/protocol/bc"
 )
 
 // MsgGetHeaders implements the Message interface and represents a bitcoin
@@ -28,13 +30,16 @@ import (
 // exponentially decrease the number of hashes the further away from head and
 // closer to the genesis block you get.
 type MsgGetHeaders struct {
-	ProtocolVersion    uint32
-	BlockLocatorHashes []*chainhash.Hash
-	HashStop           chainhash.Hash
+	ProtocolVersion uint32
+	// BlockLocatorHashes []*chainhash.Hash
+	// HashStop           chainhash.Hash
+	BlockLocatorHashes []*bc.Hash
+	HashStop           bc.Hash
 }
 
 // AddBlockLocatorHash adds a new block locator hash to the message.
-func (msg *MsgGetHeaders) AddBlockLocatorHash(hash *chainhash.Hash) error {
+// func (msg *MsgGetHeaders) AddBlockLocatorHash(hash *chainhash.Hash) error {
+func (msg *MsgGetHeaders) AddBlockLocatorHash(hash *bc.Hash) error {
 	if len(msg.BlockLocatorHashes)+1 > MaxBlockLocatorsPerMsg {
 		str := fmt.Sprintf("too many block locator hashes for message [max %v]",
 			MaxBlockLocatorsPerMsg)
@@ -66,8 +71,10 @@ func (msg *MsgGetHeaders) BtcDecode(r io.Reader, pver uint32, enc MessageEncodin
 
 	// Create a contiguous slice of hashes to deserialize into in order to
 	// reduce the number of allocations.
-	locatorHashes := make([]chainhash.Hash, count)
-	msg.BlockLocatorHashes = make([]*chainhash.Hash, 0, count)
+	// locatorHashes := make([]chainhash.Hash, count)
+	// msg.BlockLocatorHashes = make([]*chainhash.Hash, 0, count)
+	locatorHashes := make([]bc.Hash, count)
+	msg.BlockLocatorHashes = make([]*bc.Hash, 0, count)
 	for i := uint64(0); i < count; i++ {
 		hash := &locatorHashes[i]
 		err := readElement(r, hash)
@@ -140,7 +147,8 @@ func (msg *MsgGetHeaders) MaxPayloadLength(pver uint32) uint32 {
 // the Message interface.  See MsgGetHeaders for details.
 func NewMsgGetHeaders() *MsgGetHeaders {
 	return &MsgGetHeaders{
-		BlockLocatorHashes: make([]*chainhash.Hash, 0,
+		// BlockLocatorHashes: make([]*chainhash.Hash, 0,
+		BlockLocatorHashes: make([]*bc.Hash, 0,
 			MaxBlockLocatorsPerMsg),
 	}
 }
