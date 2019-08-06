@@ -1,5 +1,7 @@
 # Bytomlit - a lightning node on Bytom using PHTLC
 
+A payment channel network daemon based on Bytom using Path Hashed Time Locked Contract (PHTLC) instead of Hashed Time Locked Contract (HTLC), which is robust against wormhole attack.
+
 Under development, not for use with real money.
 
 ## Setup
@@ -171,7 +173,7 @@ One package that implements the chainhook interface is uspv.  Uspv deals with he
 
 #### Dependency graph
 
-![Dependency Graph](deps.png)
+![Dependency Graph](docs/deps.png)
 
 ## License
 
