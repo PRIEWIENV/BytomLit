@@ -58,6 +58,10 @@ func (r *LitRPC) Balance(args *NoArgs, reply *BalanceReply) error {
 		cbr.CoinType = cointype
 		// get wallet height
 		cbr.SyncHeight = wal.CurrentHeight()
+
+		// TODO:
+		fmt.Println("callllllllllllllllllllllllllllllll getBalance")
+
 		// also current fee rate
 		cbr.FeeRate = wal.Fee()
 
