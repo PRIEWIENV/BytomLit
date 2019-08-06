@@ -12,6 +12,7 @@ And also try `grep` with "TODO:"
     + fix wallit
     * fix resync
     * walkthrough
+        + faucet
     * merkle
     * LitNode.AutoReconnect()
     + `bech32.Encode("ln"` can be a good start point
