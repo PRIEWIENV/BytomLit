@@ -77,6 +77,7 @@ func (s *SPVCon) DialNode(listOfNodes []string) error {
 
 	// now have some IPs, go through and try to connect to one.
 	var err error
+	fmt.Println(listOfNodes)
 	for i, ip := range listOfNodes {
 		// try to connect to all nodes in this range
 		var conString, conMode string
@@ -205,7 +206,7 @@ func (s *SPVCon) Handshake(listOfNodes []string) error {
 // which sends out wire messages, checks for version string to prevent spam, etc.
 func (s *SPVCon) Connect(remoteNode string) error {
 	// TODO:
-	remoteNode = "localhost"
+	// remoteNode = "localhost"
 	var err error
 	var listOfNodes []string
 	if lnutil.YupString(remoteNode) { // TODO Make this better.  Perhaps a "connection target"?

@@ -15,6 +15,11 @@ webui/dist
 webui/build
 *.pyc
 
+# test
+
+anode
+bnode
+
 # Editor temp files
 \#*
 .\#*
@@ -34,3 +39,6 @@ Session.vim
 .netrwhist
 # auto-generated tag files
 tags
+
+# VSCode
+.vscode
