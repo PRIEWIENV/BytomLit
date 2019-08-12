@@ -1,11 +1,14 @@
 package api
 
 import (
+	// "log"
+
 	"github.com/gin-gonic/gin"
 )
 
-type listCrosschainTxsReq struct{ Display }
+type buildTxReq struct{}
 
-func (s *Server) ListCrosschainTxs(c *gin.Context, listTxsReq *listCrosschainTxsReq, query *PaginationQuery) ([]string, error) {
+func (s *Server) BuildTx(c *gin.Context, req *buildTxReq) ([]string, error) {
+	// log.Println(req)
 	return nil, nil
 }

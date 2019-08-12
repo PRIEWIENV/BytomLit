@@ -36,8 +36,7 @@ func (server *Server) setupRouter() {
 	r := gin.Default()
 	r.Use(server.middleware())
 
-	v1 := r.Group("/api/v1")
-	v1.POST("/federation/list-crosschain-txs", handlerMiddleware(server.ListCrosschainTxs))
+	r.POST("/build-tx", handlerMiddleware(server.BuildTx))
 
 	server.engine = r
 }
