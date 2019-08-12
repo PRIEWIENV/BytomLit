@@ -4,10 +4,12 @@ import (
 	"sync"
 
 	"github.com/PRIEWIENV/PHTLC/api"
+	"github.com/PRIEWIENV/PHTLC/config"
 )
 
 func main() {
-	go api.NewServer(nil, nil).Run()
+	cfg := config.NewConfig()
+	go api.NewServer(nil, cfg).Run()
 
 	// keep the main func running in case of terminating goroutines
 	var wg sync.WaitGroup
