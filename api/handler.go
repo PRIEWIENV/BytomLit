@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"log"
 
+	btmTypes "github.com/bytom/protocol/bc/types"
 	"github.com/gin-gonic/gin"
 )
 
@@ -19,10 +20,35 @@ type io struct {
 	Amount  uint64 `json:"amount"`
 }
 
-func (s *Server) BuildTx(c *gin.Context, req *buildTxReq) ([]string, error) {
+func (s *Server) BuildTx(c *gin.Context, req *buildTxReq) (*btmTypes.Tx, error) {
 	if b, err := json.Marshal(req); err == nil {
 		log.Println("received req:", string(b))
 	}
 
-	return nil, nil
+	txData := &btmTypes.TxData{Version: 1}
+	for _, input := range req.Inputs {
+		if err := addInput(txData, input); err != nil {
+			return nil, err
+		}
+	}
+
+	for _, output := range req.Outputs {
+		if err := addOutput(txData, output); err != nil {
+			return nil, err
+		}
+	}
+
+	tx := btmTypes.NewTx(*txData)
+	// TODO: add witness?
+	return tx, nil
+}
+
+// TODO:
+func addInput(txData *btmTypes.TxData, input io) error {
+	return nil
+}
+
+// TODO:
+func addOutput(txData *btmTypes.TxData, output io) error {
+	return nil
 }
