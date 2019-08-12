@@ -18,8 +18,8 @@ type buildTxReq struct {
 
 type io struct {
 	Program   string     `json:"program"`
-	SourceID  btmBc.Hash `json:"source_id"`
-	SourcePos uint64     `json:"source_pos"`
+	SourceID  btmBc.Hash `json:"source_id"`  // for input only
+	SourcePos uint64     `json:"source_pos"` // for input only
 	AssetID   string     `json:"asset_id"`
 	Amount    uint64     `json:"amount"`
 }
