@@ -1,0 +1,12 @@
+{
+    "mysql" : {
+        "connection" : {
+            "host": "127.0.0.1",
+            "port": 3306,
+            "username": "root",
+            "password": "toor",
+            "database": "bytom_lightning"
+        },
+        "log_mode" : true
+    }
+}
