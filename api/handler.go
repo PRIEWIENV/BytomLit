@@ -1,9 +1,11 @@
 package api
 
 import (
+	"encoding/hex"
 	"encoding/json"
 	"log"
 
+	btmBc "github.com/bytom/protocol/bc"
 	btmTypes "github.com/bytom/protocol/bc/types"
 	"github.com/gin-gonic/gin"
 )
@@ -55,7 +57,18 @@ func addInput(txData *btmTypes.TxData, input io) error {
 	return nil
 }
 
-// TODO:
 func addOutput(txData *btmTypes.TxData, output io) error {
+	assetID := &btmBc.AssetID{}
+	if err := assetID.UnmarshalText([]byte(output.AssetID)); err != nil {
+		return err
+	}
+
+	program, err := hex.DecodeString(output.Program)
+	if err != nil {
+		return err
+	}
+
+	out := btmTypes.NewTxOutput(*assetID, output.Amount, program)
+	txData.Outputs = append(txData.Outputs, out)
 	return nil
 }
