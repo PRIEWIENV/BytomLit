@@ -17,9 +17,11 @@ type buildTxReq struct {
 }
 
 type io struct {
-	Program string `json:"program"`
-	AssetID string `json:"asset_id"`
-	Amount  uint64 `json:"amount"`
+	Program   string     `json:"program"`
+	SourceID  btmBc.Hash `json:"source_id"`
+	SourcePos uint64     `json:"source_pos"`
+	AssetID   string     `json:"asset_id"`
+	Amount    uint64     `json:"amount"`
 }
 
 type buildTxResp struct {
@@ -54,8 +56,19 @@ func (s *Server) BuildTx(c *gin.Context, req *buildTxReq) (*buildTxResp, error) 
 	return resp, nil
 }
 
-// TODO:
 func addInput(txData *btmTypes.TxData, input io) error {
+	assetID := &btmBc.AssetID{}
+	if err := assetID.UnmarshalText([]byte(input.AssetID)); err != nil {
+		return err
+	}
+
+	program, err := hex.DecodeString(input.Program)
+	if err != nil {
+		return err
+	}
+
+	txInput := btmTypes.NewSpendInput(nil, input.SourceID, *assetID, input.Amount, input.SourcePos, program)
+	txData.Inputs = append(txData.Inputs, txInput)
 	return nil
 }
 
