@@ -39,7 +39,8 @@ type Config struct {
 }
 
 type API struct {
-	IsReleaseMode bool `json:"is_release_mode"`
+	IsReleaseMode bool   `json:"is_release_mode"`
+	Port          uint64 `json:"port"`
 }
 
 type Chain struct {

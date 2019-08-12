@@ -1,4 +1,7 @@
 {
+    "api" : {
+        "port" : 9000
+    },
     "mysql" : {
         "connection" : {
             "host": "127.0.0.1",
