@@ -23,6 +23,7 @@ type io struct {
 }
 
 type buildTxResp struct {
+	// TODO: add sign_insts?
 	RawTx *btmTypes.Tx `json:"raw_tx"`
 }
 
@@ -49,6 +50,7 @@ func (s *Server) BuildTx(c *gin.Context, req *buildTxReq) (*buildTxResp, error) 
 	resp := &buildTxResp{
 		RawTx: tx,
 	}
+
 	return resp, nil
 }
 
