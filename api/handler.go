@@ -20,7 +20,11 @@ type io struct {
 	Amount  uint64 `json:"amount"`
 }
 
-func (s *Server) BuildTx(c *gin.Context, req *buildTxReq) (*btmTypes.Tx, error) {
+type buildTxResp struct {
+	RawTx *btmTypes.Tx `json:"raw_tx"`
+}
+
+func (s *Server) BuildTx(c *gin.Context, req *buildTxReq) (*buildTxResp, error) {
 	if b, err := json.Marshal(req); err == nil {
 		log.Println("received req:", string(b))
 	}
@@ -40,7 +44,10 @@ func (s *Server) BuildTx(c *gin.Context, req *buildTxReq) (*btmTypes.Tx, error) 
 
 	tx := btmTypes.NewTx(*txData)
 	// TODO: add witness?
-	return tx, nil
+	resp := &buildTxResp{
+		RawTx: tx,
+	}
+	return resp, nil
 }
 
 // TODO:
