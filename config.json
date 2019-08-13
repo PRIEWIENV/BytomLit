@@ -1,5 +1,6 @@
 {
     "api" : {
+        "is_release_mode" : false,
         "port" : 9000
     },
     "mysql" : {
@@ -11,5 +12,11 @@
             "database": "bytom_lightning"
         },
         "log_mode" : true
+    },
+    "mainchain" : {
+        "name" : "Bytom",
+        "upstream" : "http://127.0.0.1:9888",
+        "sync_seconds" : 5,
+        "Confirmations" : 6
     }
 }
