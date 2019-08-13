@@ -22,9 +22,6 @@ transaction that splits these funds differently, e.g. 0.09 bitcoin to one
 party, 0.01 bitcoin to the other, and invalidate the previous bitcoin
 transaction so it won't be spent.
 
-See [BOLT #2: Channel Establishment](02-peer-protocol.md#channel-establishment) for more on
-channel establishment and [BOLT #3: Funding Transaction Output](03-transactions.md#funding-transaction-output) for the format of the bitcoin transaction that creates the channel.  See [BOLT #5: Recommendations for On-chain Transaction Handling](05-onchain.md) for the requirements when participants disagree or fail, and the cross-signed bitcoin transaction must be spent.
-
 ### Conditional Payments
 
 A Lightning channel only allows payment between two participants, but channels can be connected together to form a network that allows payments between all members of the network. This requires the technology of a conditional payment, which can be added to a channel,
@@ -55,13 +52,6 @@ See [BOLT #7: P2P Node and Channel Discovery](07-routing-gossip.md)
 for details on the communication protocol, and [BOLT #10: DNS
 Bootstrap and Assisted Node Location](10-dns-bootstrap.md) for initial
 network bootstrap.
-
-### Payment Invoicing
-
-A participant receives invoices that tell her what payments to make.
-
-See [BOLT #11: Invoice Protocol for Lightning Payments](11-payment-encoding.md) for the protocol describing the destination and purpose of a payment such that the payer can later prove successful payment.
-
 
 ## Glossary and Terminology Guide
 
@@ -635,475 +625,14 @@ every message maximally).
 Finally, the usage of periodic `ping` messages serves to promote frequent key
 rotations as specified within [BOLT #8](08-transport.md).
 
-## Appendix A: BigSize Test Vectors
-
-The following test vectors can be used to assert the correctness of a BigSize
-implementation used in the TLV format. The format is identical to the
-CompactSize encoding used in bitcoin, but replaces the little-endian encoding of
-multi-byte values with big-endian.
-
-Values encoded with BigSize will produce an encoding of either 1, 3, 5, or 9
-bytes depending on the size of the integer. The encoding is a piece-wise
-function that takes a `uint64` value `x` and produces:
-```
-        uint8(x)                if x < 0xfd
-        0xfd + be16(uint16(x))  if x < 0x10000
-        0xfe + be32(uint32(x))  if x < 0x100000000
-        0xff + be64(x)          otherwise.
-```
-
-Here `+` denotes concatenation and `be16`, `be32`, and `be64` produce a
-big-endian encoding of the input for 16, 32, and 64-bit integers, respectively.
-
-A value is said to be _minimally encoded_ if it could have been encoded using a
-smaller representation. For example, a BigSize encoding that occupies 5 bytes
-but whose value is less than 0x10000 is not minimally encoded. All values
-decoded with BigSize should be checked to ensure they are minimally encoded.
-
-### BigSize Decoding Tests
-
-The following is an example of how to execute the BigSize decoding tests.
-```golang
-func testReadVarInt(t *testing.T, test varIntTest) {
-        var buf [8]byte 
-        r := bytes.NewReader(test.Bytes)
-        val, err := tlv.ReadVarInt(r, &buf)
-        if err != nil && err.Error() != test.ExpErr {
-                t.Fatalf("expected decoding error: %v, got: %v",
-                        test.ExpErr, err)
-        }
-
-        // If we expected a decoding error, there's no point checking the value.
-        if test.ExpErr != "" {
-                return
-        }
-
-        if val != test.Value {
-                t.Fatalf("expected value: %d, got %d", test.Value, val)
-        }
-}
-```
-
-A correct implementation should pass against these test vectors:
-```json
-[
-    {
-        "name": "zero",
-        "value": 0,
-        "bytes": "00"
-    },
-    {
-        "name": "one byte high",
-        "value": 252,
-        "bytes": "fc"
-    },
-    {
-        "name": "two byte low",
-        "value": 253,
-        "bytes": "fd00fd"
-    },
-    {
-        "name": "two byte high",
-        "value": 65535,
-        "bytes": "fdffff"
-    },
-    {
-        "name": "four byte low",
-        "value": 65536,
-        "bytes": "fe00010000"
-    },
-    {
-        "name": "four byte high",
-        "value": 4294967295,
-        "bytes": "feffffffff"
-    },
-    {
-        "name": "eight byte low",
-        "value": 4294967296,
-        "bytes": "ff0000000100000000"
-    },
-    {
-        "name": "eight byte high",
-        "value": 18446744073709551615,
-        "bytes": "ffffffffffffffffff"
-    },
-    {
-        "name": "two byte not canonical",
-        "value": 0,
-        "bytes": "fd00fc",
-        "exp_error": "decoded varint is not canonical"
-    },
-    {
-        "name": "four byte not canonical",
-        "value": 0,
-        "bytes": "fe0000ffff",
-        "exp_error": "decoded varint is not canonical"
-    },
-    {
-        "name": "eight byte not canonical",
-        "value": 0,
-        "bytes": "ff00000000ffffffff",
-        "exp_error": "decoded varint is not canonical"
-    },
-    {
-        "name": "two byte short read",
-        "value": 0,
-        "bytes": "fd00",
-        "exp_error": "unexpected EOF"
-    },
-    {
-        "name": "four byte short read",
-        "value": 0,
-        "bytes": "feffff",
-        "exp_error": "unexpected EOF"
-    },
-    {
-        "name": "eight byte short read",
-        "value": 0,
-        "bytes": "ffffffffff",
-        "exp_error": "unexpected EOF"
-    },
-    {
-        "name": "one byte no read",
-        "value": 0,
-        "bytes": "",
-        "exp_error": "EOF"
-    },
-    {
-        "name": "two byte no read",
-        "value": 0,
-        "bytes": "fd",
-        "exp_error": "unexpected EOF"
-    },
-    {
-        "name": "four byte no read",
-        "value": 0,
-        "bytes": "fe",
-        "exp_error": "unexpected EOF"
-    },
-    {
-        "name": "eight byte no read",
-        "value": 0,
-        "bytes": "ff",
-        "exp_error": "unexpected EOF"
-    }
-]
-```
-
-### BigSize Encoding Tests
-
-The following is an example of how to execute the BigSize encoding tests.
-```golang
-func testWriteVarInt(t *testing.T, test varIntTest) {
-        var (
-                w   bytes.Buffer
-                buf [8]byte
-        )
-        err := tlv.WriteVarInt(&w, test.Value, &buf)
-        if err != nil {
-                t.Fatalf("unable to encode %d as varint: %v",
-                        test.Value, err)
-        }
-
-        if bytes.Compare(w.Bytes(), test.Bytes) != 0 {
-                t.Fatalf("expected bytes: %v, got %v",
-                        test.Bytes, w.Bytes())
-        }
-}
-```
-
-A correct implementation should pass against the following test vectors:
-```json
-[
-    {
-        "name": "zero",
-        "value": 0,
-        "bytes": "00"
-    },
-    {
-        "name": "one byte high",
-        "value": 252,
-        "bytes": "fc"
-    },
-    {
-        "name": "two byte low",
-        "value": 253,
-        "bytes": "fd00fd"
-    },
-    {
-        "name": "two byte high",
-        "value": 65535,
-        "bytes": "fdffff"
-    },
-    {
-        "name": "four byte low",
-        "value": 65536,
-        "bytes": "fe00010000"
-    },
-    {
-        "name": "four byte high",
-        "value": 4294967295,
-        "bytes": "feffffffff"
-    },
-    {
-        "name": "eight byte low",
-        "value": 4294967296,
-        "bytes": "ff0000000100000000"
-    },
-    {
-        "name": "eight byte high",
-        "value": 18446744073709551615,
-        "bytes": "ffffffffffffffffff"
-    }
-]
-```
-
-## Appendix B: Type-Length-Value Test Vectors
-
-The following tests assume that two separate TLV namespaces exist: n1 and n2.
-
-The n1 namespace supports the following TLV types:
-
-1. tlvs: `n1`
-2. types:
-   1. type: 1 (`tlv1`)
-   2. data:
-     * [`tu64`:`amount_msat`]
-   1. type: 2 (`tlv2`)
-   2. data:
-     * [`short_channel_id`:`scid`]
-   1. type: 3 (`tlv3`)
-   2. data:
-     * [`point`:`node_id`]
-     * [`u64`:`amount_msat_1`]
-     * [`u64`:`amount_msat_2`]
-   1. type: 254 (`tlv4`)
-   2. data:
-     * [`u16`:`cltv_delta`]
-
-The n2 namespace supports the following TLV types:
-
-1. tlvs: `n2`
-2. types:
-   1. type: 0 (`tlv1`)
-   2. data:
-     * [`tu64`:`amount_msat`]
-   1. type: 11 (`tlv2`)
-   2. data:
-     * [`tu32`:`cltv_expiry`]
-
-### TLV Decoding Failures
-
-The following TLV streams in any namespace should trigger a decoding failure:
-
-1. Invalid stream: 0xfd
-2. Reason: type truncated
-
-1. Invalid stream: 0xfd01
-2. Reason: type truncated
-
-1. Invalid stream: 0xfd0001 00
-2. Reason: not minimally encoded type
-
-1. Invalid stream: 0xfd0101
-2. Reason: missing length
-
-1. Invalid stream: 0x0f fd
-2. Reason: (length truncated)
-
-1. Invalid stream: 0x0f fd26
-2. Reason: (length truncated)
-
-1. Invalid stream: 0x0f fd2602
-2. Reason: missing value
-
-1. Invalid stream: 0x0f fd0001 00
-2. Reason: not minimally encoded length
-
-1. Invalid stream: 0x0f fd0201 000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-2. Reason: value truncated
-
-The following TLV streams in either namespace should trigger a
-decoding failure:
-
-1. Invalid stream: 0x12 00
-2. Reason: unknown even type.
-
-1. Invalid stream: 0xfd0102 00
-2. Reason: unknown even type.
-
-1. Invalid stream: 0xfe01000002 00
-2. Reason: unknown even type.
-
-1. Invalid stream: 0xff0100000000000002 00
-2. Reason: unknown even type.
-
-The following TLV streams in namespace `n1` should trigger a decoding
-failure:
-
-1. Invalid stream: 0x01 09 ffffffffffffffffff
-2. Reason: greater than encoding length for `n1`s `tlv1`.
-
-1. Invalid stream: 0x01 01 00
-2. Reason: encoding for `n1`s `tlv1`s `amount_msat` is not minimal
-
-1. Invalid stream: 0x01 02 0001
-2. Reason: encoding for `n1`s `tlv1`s `amount_msat` is not minimal
-
-1. Invalid stream: 0x01 03 000100
-2. Reason: encoding for `n1`s `tlv1`s `amount_msat` is not minimal
-
-1. Invalid stream: 0x01 04 00010000
-2. Reason: encoding for `n1`s `tlv1`s `amount_msat` is not minimal
-
-1. Invalid stream: 0x01 05 0001000000
-2. Reason: encoding for `n1`s `tlv1`s `amount_msat` is not minimal
-
-1. Invalid stream: 0x01 06 000100000000
-2. Reason: encoding for `n1`s `tlv1`s `amount_msat` is not minimal
-
-1. Invalid stream: 0x01 07 00010000000000
-2. Reason: encoding for `n1`s `tlv1`s `amount_msat` is not minimal
-
-1. Invalid stream: 0x01 08 0001000000000000
-2. Reason: encoding for `n1`s `tlv1`s `amount_msat` is not minimal
-
-1. Invalid stream: 0x02 07 01010101010101
-2. Reason: less than encoding length for `n1`s `tlv2`.
-
-1. Invalid stream: 0x02 09 010101010101010101
-2. Reason: greater than encoding length for `n1`s `tlv2`.
-
-1. Invalid stream: 0x03 21 023da092f6980e58d2c037173180e9a465476026ee50f96695963e8efe436f54eb
-2. Reason: less than encoding length for `n1`s `tlv3`.
-
-1. Invalid stream: 0x03 29 023da092f6980e58d2c037173180e9a465476026ee50f96695963e8efe436f54eb0000000000000001
-2. Reason: less than encoding length for `n1`s `tlv3`.
-
-1. Invalid stream: 0x03 30 023da092f6980e58d2c037173180e9a465476026ee50f96695963e8efe436f54eb000000000000000100000000000001
-2. Reason: less than encoding length for `n1`s `tlv3`.
-
-1. Invalid stream: 0x03 31 043da092f6980e58d2c037173180e9a465476026ee50f96695963e8efe436f54eb00000000000000010000000000000002
-2. Reason: `n1`s `node_id` is not a valid point.
-
-1. Invalid stream: 0x03 32 023da092f6980e58d2c037173180e9a465476026ee50f96695963e8efe436f54eb0000000000000001000000000000000001
-2. Reason: greater than encoding length for `n1`s `tlv3`.
-
-1. Invalid stream: 0xfd00fe 00
-2. Reason: less than encoding length for `n1`s `tlv4`.
-
-1. Invalid stream: 0xfd00fe 01 01
-2. Reason: less than encoding length for `n1`s `tlv4`.
-
-1. Invalid stream: 0xfd00fe 03 010101
-2. Reason: greater than encoding length for `n1`s `tlv4`.
-
-1. Invalid stream: 0x00 00
-2. Reason: unknown even field for `n1`s namespace.
-
-### TLV Decoding Successes
-
-The following TLV streams in either namespace should correctly decode,
-and be ignored:
-
-1. Valid stream: 0x
-2. Explanation: empty message
-
-1. Valid stream: 0x21 00
-2. Explanation: Unknown odd type.
-
-1. Valid stream: 0xfd0201 00
-2. Explanation: Unknown odd type.
-
-1. Valid stream: 0xfd00fd 00
-2. Explanation: Unknown odd type.
-
-1. Valid stream: 0xfd00ff 00
-2. Explanation: Unknown odd type.
-
-1. Valid stream: 0xfe02000001 00
-2. Explanation: Unknown odd type.
-
-1. Valid stream: 0xff0200000000000001 00
-2. Explanation: Unknown odd type.
-
-The following TLV streams in `n1` namespace should correctly decode,
-with the values given here:
-
-1. Valid stream: 0x01 00
-2. Values: `tlv1` `amount_msat`=0
-
-1. Valid stream: 0x01 01 01
-2. Values: `tlv1` `amount_msat`=1
-
-1. Valid stream: 0x01 02 0100
-2. Values: `tlv1` `amount_msat`=256
-
-1. Valid stream: 0x01 03 010000
-2. Values: `tlv1` `amount_msat`=65536
-
-1. Valid stream: 0x01 04 01000000
-2. Values: `tlv1` `amount_msat`=16777216
-
-1. Valid stream: 0x01 05 0100000000
-2. Values: `tlv1` `amount_msat`=4294967296
-
-1. Valid stream: 0x01 06 010000000000
-2. Values: `tlv1` `amount_msat`=1099511627776
-
-1. Valid stream: 0x01 07 01000000000000
-2. Values: `tlv1` `amount_msat`=281474976710656
-
-1. Valid stream: 0x01 08 0100000000000000
-2. Values: `tlv1` `amount_msat`=72057594037927936
-
-1. Valid stream: 0x02 08 0000000000000226
-2. Values: `tlv2` `scid`=0x0x550
-
-1. Valid stream: 0x03 31 023da092f6980e58d2c037173180e9a465476026ee50f96695963e8efe436f54eb00000000000000010000000000000002
-2. Values: `tlv3` `node_id`=023da092f6980e58d2c037173180e9a465476026ee50f96695963e8efe436f54eb `amount_msat_1`=1 `amount_msat_2`=2
-
-1. Valid stream: 0xfd00fe 02 0226
-2. Values: `tlv4` `cltv_delta`=550
-
-### TLV Stream Decoding Failure
-
-Any appending of an invalid stream to a valid stream should trigger
-a decoding failure.
-
-Any appending of a higher-numbered valid stream to a lower-numbered
-valid stream should not trigger a decoding failure.
-
-In addition, the following TLV streams in namespace `n1` should
-trigger a decoding failure:
-
-1. Invalid stream: 0x02 08 0000000000000226 01 01 2a
-2. Reason: valid TLV records but invalid ordering
-
-1. Invalid stream: 0x02 08 0000000000000231 02 08 0000000000000451
-2. Reason: duplicate TLV type
-
-1. Invalid stream: 0x1f 00 0f 01 2a
-2. Reason: valid (ignored) TLV records but invalid ordering
-
-1. Invalid stream: 0x1f 00 1f 01 2a
-2. Reason: duplicate TLV type (ignored)
-
-The following TLV stream in namespace `n2` should trigger a decoding
-failure:
-
-1. Invalid stream: 0xffffffffffffffffff 00 00 00
-2. Reason: valid TLV records but invalid ordering
-
-
 ## 2: Peer Protocol for Channel Management
 
 The peer channel protocol has three phases: establishment, normal
 operation, and closing.
 
-# Channel
+### Channel
 
-## Definition of `channel_id`
+#### Definition of `channel_id`
 
 Some messages use a `channel_id` to identify the channel. It's
 derived from the funding transaction by combining the `funding_txid`
@@ -1124,7 +653,7 @@ pubkey corresponding to the funding output nothing prevents duplicative channel
 ids.
 
 
-## Channel Establishment
+#### Channel Establishment
 
 After authenticating and initializing a connection ([BOLT #8](08-transport.md)
 and [BOLT #1](01-messaging.md#the-init-message), respectively), channel establishment may begin.
@@ -1171,7 +700,7 @@ messages are identified by either a `temporary_channel_id` (before the
 funding transaction is created) or a `channel_id` (derived from the
 funding transaction).
 
-### The `open_channel` Message
+##### The `open_channel` Message
 
 This message contains information about a node and indicates its
 desire to set up a new channel. This is the first step toward creating
@@ -1263,7 +792,7 @@ even if a node is compromised later.
 
 [ FIXME: Describe dangerous feature bit for larger channel amounts. ]
 
-#### Requirements
+###### Requirements
 
 The sending node:
   - MUST ensure the `chain_hash` value identifies the chain it wishes to open the channel within.
@@ -1316,7 +845,7 @@ are not valid DER-encoded compressed secp256k1 pubkeys.
 The receiving node MUST NOT:
   - consider funds received, using `push_msat`, to be received until the funding transaction has reached sufficient depth.
 
-#### Rationale
+###### Rationale
 
 The requirement for `funding_satoshi` to be less than 2^24 satoshi is a temporary self-imposed limit while implementations are not yet considered stable.
 It can be lifted at any point in time, or adjusted for other currencies, since it is solely enforced by the endpoints of a channel.
@@ -1338,13 +867,13 @@ are above both `dust_limit_satoshis`.
 
 Details for how to handle a channel failure can be found in [BOLT 5:Failing a Channel](05-onchain.md#failing-a-channel).
 
-#### Future
+###### Future
 
 It would be easy to have a local feature bit which indicated that a
 receiving node was prepared to fund a channel, which would reverse this
 protocol.
 
-### The `accept_channel` Message
+##### The `accept_channel` Message
 
 This message contains information about a node and indicates its
 acceptance of the new channel. This is the second step toward creating the
@@ -1369,7 +898,7 @@ funding transaction and both versions of the commitment transaction.
    * [`u16`:`shutdown_len`] (`option_upfront_shutdown_script`)
    * [`shutdown_len*byte`:`shutdown_scriptpubkey`] (`option_upfront_shutdown_script`)
 
-#### Requirements
+###### Requirements
 
 The `temporary_channel_id` MUST be the same as the `temporary_channel_id` in
 the `open_channel` message.
@@ -1389,7 +918,7 @@ The receiver:
 	- MUST reject the channel.
 Other fields have the same requirements as their counterparts in `open_channel`.
 
-### The `funding_created` Message
+##### The `funding_created` Message
 
 This message describes the outpoint which the funder has created for
 the initial commitment transactions. After receiving the peer's
@@ -1402,7 +931,7 @@ signature, via `funding_signed`, it will broadcast the funding transaction.
     * [`u16`:`funding_output_index`]
     * [`signature`:`signature`]
 
-#### Requirements
+###### Requirements
 
 The sender MUST set:
   - `temporary_channel_id` the same as the `temporary_channel_id` in the `open_channel` message.
@@ -1419,13 +948,13 @@ The recipient:
   - if `signature` is incorrect:
     - MUST fail the channel.
 
-#### Rationale
+###### Rationale
 
 The `funding_output_index` can only be 2 bytes, since that's how it's packed into the `channel_id` and used throughout the gossip protocol. The limit of 65535 outputs should not be overly burdensome.
 
 A transaction with all Segregated Witness inputs is not malleable, hence the funding transaction recommendation.
 
-### The `funding_signed` Message
+##### The `funding_signed` Message
 
 This message gives the funder the signature it needs for the first
 commitment transaction, so it can broadcast the transaction knowing that funds
@@ -1438,7 +967,7 @@ This message introduces the `channel_id` to identify the channel. It's derived f
     * [`channel_id`:`channel_id`]
     * [`signature`:`signature`]
 
-#### Requirements
+###### Requirements
 
 The sender MUST set:
   - `channel_id` by exclusive-OR of the `funding_txid` and the `funding_output_index` from the `funding_created` message.
@@ -1451,7 +980,7 @@ The recipient:
   - on receipt of a valid `funding_signed`:
     - SHOULD broadcast the funding transaction.
 
-### The `funding_locked` Message
+##### The `funding_locked` Message
 
 This message indicates that the funding transaction has reached the `minimum_depth` asked for in `accept_channel`. Once both nodes have sent this, the channel enters normal operating mode.
 
@@ -1460,7 +989,7 @@ This message indicates that the funding transaction has reached the `minimum_dep
     * [`channel_id`:`channel_id`]
     * [`point`:`next_per_commitment_point`]
 
-#### Requirements
+###### Requirements
 
 The sender MUST:
   - wait until the funding transaction has reached
@@ -1478,19 +1007,19 @@ From the point of waiting for `funding_locked` onward, either node MAY
 fail the channel if it does not receive a required response from the
 other node after a reasonable timeout.
 
-#### Rationale
+###### Rationale
 
 The non-funder can simply forget the channel ever existed, since no
 funds are at risk. If the fundee were to remember the channel forever, this
 would create a Denial of Service risk; therefore, forgetting it is recommended
 (even if the promise of `push_msat` is significant).
 
-#### Future
+###### Future
 
 An SPV proof could be added and block hashes could be routed in separate
 messages.
 
-## Channel Close
+#### Channel Close
 
 Nodes can negotiate a mutual close of the connection, which unlike a
 unilateral close, allows them to access their funds immediately and
@@ -1514,7 +1043,7 @@ Closing happens in two stages:
         |       |<-(?)-- closing_signed  Fn----|       |
         +-------+                              +-------+
 
-### Closing Initiation: `shutdown`
+##### Closing Initiation: `shutdown`
 
 Either node (or both) can send a `shutdown` message to initiate closing,
 along with the `scriptpubkey` it wants to be paid to.
@@ -1525,7 +1054,7 @@ along with the `scriptpubkey` it wants to be paid to.
    * [`u16`:`len`]
    * [`len*byte`:`scriptpubkey`]
 
-#### Requirements
+###### Requirements
 
 A sending node:
   - if it hasn't sent a `funding_created` (if it is a funder) or a `funding_signed` (if it is a fundee):
@@ -1559,7 +1088,7 @@ A receiving node:
   - if both nodes advertised the `option_upfront_shutdown_script` feature, and the receiving node received a non-zero-length `shutdown_scriptpubkey` in `open_channel` or `accept_channel`, and that `shutdown_scriptpubkey` is not equal to `scriptpubkey`:
     - MUST fail the connection.
 
-#### Rationale
+###### Rationale
 
 If channel state is always "clean" (no pending changes) when a
 shutdown starts, the question of how to behave if it wasn't is avoided:
@@ -1584,7 +1113,7 @@ of the receiving node to change the `scriptpubkey`.
 
 The `shutdown` response requirement implies that the node sends `commitment_signed` to commit any outstanding changes before replying; however, it could theoretically reconnect instead, which would simply erase all outstanding uncommitted changes.
 
-### Closing Negotiation: `closing_signed`
+##### Closing Negotiation: `closing_signed`
 
 Once shutdown is complete and the channel is empty of HTLCs, the final
 current commitment transactions will have no HTLCs, and closing fee
@@ -1601,7 +1130,7 @@ the channel.
    * [`u64`:`fee_satoshis`]
    * [`signature`:`signature`]
 
-#### Requirements
+###### Requirements
 
 The funding node:
   - after `shutdown` has been received, AND no HTLCs remain in either commitment transaction:
@@ -1636,7 +1165,7 @@ between its last-sent `fee_satoshis` and its previously-received
     - MUST propose a value "strictly between" the received `fee_satoshis`
   and its previously-sent `fee_satoshis`.
 
-#### Rationale
+###### Rationale
 
 The "strictly between" requirement ensures that forward
 progress is made, even if only by a single satoshi at a time. To avoid
@@ -1647,7 +1176,7 @@ Note there is limited risk if the closing transaction is
 delayed, but it will be broadcast very soon; so there is usually no
 reason to pay a premium for rapid processing.
 
-## Normal Operation
+#### Normal Operation
 
 Once both nodes have exchanged `funding_locked` (and optionally [`announcement_signatures`](07-routing-gossip.md#the-announcement_signatures-message)), the channel can be used to make payments via Hashed Time Locked Contracts.
 
@@ -1689,7 +1218,7 @@ transactions may be out of sync indefinitely. This is not concerning:
 what matters is whether both sides have irrevocably committed to a
 particular update or not (the final state, above).
 
-### Forwarding HTLCs
+##### Forwarding HTLCs
 
 In general, a node offers HTLCs for two reasons: to initiate a payment of its own,
 or to forward another node's payment. In the forwarding case, care must
@@ -1703,7 +1232,7 @@ previous commitment transaction **without/with** it has been revoked, OR
 2. The commitment transaction **with/without** it has been irreversibly committed to
 the blockchain.
 
-#### Requirements
+###### Requirements
 
 A node:
   - until an incoming HTLC has been irrevocably committed:
@@ -1718,7 +1247,7 @@ to that outgoing HTLC.
   - upon receiving an `update_fulfill_htlc` for an outgoing HTLC, OR upon discovering the `payment_preimage` from an on-chain HTLC spend:
     - MUST fulfill the incoming HTLC that corresponds to that outgoing HTLC.
 
-#### Rationale
+###### Rationale
 
 In general, one side of the exchange needs to be dealt with before the other.
 Fulfilling an HTLC is different: knowledge of the preimage is, by definition,
@@ -1729,7 +1258,7 @@ An HTLC with an unreasonably long expiry is a denial-of-service vector and
 therefore is not allowed. Note that the exact value of "unreasonable" is currently unclear
 and may depend on network topology.
 
-### `cltv_expiry_delta` Selection
+##### `cltv_expiry_delta` Selection
 
 Once an HTLC has timed out, it can either be fulfilled or timed-out;
 care must be taken around this transition, both for offered and received HTLCs.
@@ -1820,7 +1349,7 @@ the channel has to be failed and the HTLC fulfilled on-chain before its
    [BOLT #11](11-payment-encoding.md) is 9, which is slightly more
    conservative than the 7 that this calculation suggests.
 
-#### Requirements
+###### Requirements
 
 An offering node:
   - MUST estimate a timeout deadline for each HTLC it offers.
@@ -1837,7 +1366,7 @@ A fulfilling node:
   transaction, AND is past this fulfillment deadline:
     - MUST fail the channel.
 
-### Adding an HTLC: `update_add_htlc`
+##### Adding an HTLC: `update_add_htlc`
 
 Either node can send `update_add_htlc` to offer an HTLC to the other,
 which is redeemable in return for a payment preimage. Amounts are in
@@ -1857,7 +1386,7 @@ is destined, is described in [BOLT #4](04-onion-routing.md).
    * [`u32`:`cltv_expiry`]
    * [`1366*byte`:`onion_routing_packet`]
 
-#### Requirements
+###### Requirements
 
 A sending node:
   - MUST NOT offer `amount_msat` it cannot pay for in the
@@ -1903,7 +1432,7 @@ The `onion_routing_packet` contains an obfuscated list of hops and instructions 
 It commits to the HTLC by setting the `payment_hash` as associated data, i.e. includes the `payment_hash` in the computation of HMACs.
 This prevents replay attacks that would reuse a previous `onion_routing_packet` with a different `payment_hash`.
 
-#### Rationale
+###### Rationale
 
 Invalid amounts are a clear protocol violation and indicate a breakdown.
 
@@ -1929,7 +1458,7 @@ seconds, and the protocol only supports an expiry in blocks.
 specification; larger amounts are not necessary, nor wise, during the
 bootstrap phase of the network.
 
-### Removing an HTLC: `update_fulfill_htlc`, `update_fail_htlc`, and `update_fail_malformed_htlc`
+##### Removing an HTLC: `update_fulfill_htlc`, `update_fail_htlc`, and `update_fail_malformed_htlc`
 
 For simplicity, a node can only remove HTLCs added by the other node.
 There are four reasons for removing an HTLC: the payment preimage is supplied,
@@ -1967,7 +1496,7 @@ For an unparsable HTLC:
    * [`sha256`:`sha256_of_onion`]
    * [`u16`:`failure_code`]
 
-#### Requirements
+###### Requirements
 
 A node:
   - SHOULD remove an HTLC as soon as it can.
@@ -1994,7 +1523,7 @@ A receiving node:
       originally sent the HTLC, using the `failure_code` given and setting the
       data to `sha256_of_onion`.
 
-#### Rationale
+###### Rationale
 
 A node that doesn't time out HTLCs risks channel failure (see
 [`cltv_expiry_delta` Selection](#cltv_expiry_delta-selection)).
@@ -2012,7 +1541,7 @@ errors. However, without re-checking the actual encrypted packet sent,
 it won't know whether the error was its own or the remote's; so
 such detection is left as an option.
 
-### Committing Updates So Far: `commitment_signed`
+##### Committing Updates So Far: `commitment_signed`
 
 When a node has changes for the remote commitment, it can apply them,
 sign the resulting transaction (as defined in [BOLT #3](03-transactions.md)), and send a
@@ -2025,7 +1554,7 @@ sign the resulting transaction (as defined in [BOLT #3](03-transactions.md)), an
    * [`u16`:`num_htlcs`]
    * [`num_htlcs*signature`:`htlc_signature`]
 
-#### Requirements
+###### Requirements
 
 A sending node:
   - MUST NOT send a `commitment_signed` message that does not include any
@@ -2052,7 +1581,7 @@ A receiving node:
     - MUST fail the channel.
   - MUST respond with a `revoke_and_ack` message.
 
-#### Rationale
+##3### Rationale
 
 There's little point offering spam updates: it implies a bug.
 
@@ -2065,7 +1594,7 @@ offline until after sending `commitment_signed`.  Once
 those HTLCs, and cannot fail the related incoming HTLCs until the
 output HTLCs are fully resolved.
 
-### Completing the Transition to the Updated State: `revoke_and_ack`
+##### Completing the Transition to the Updated State: `revoke_and_ack`
 
 Once the recipient of `commitment_signed` checks the signature and knows
 it has a valid new commitment transaction, it replies with the commitment
@@ -2085,7 +1614,7 @@ The description of key derivation is in [BOLT #3](03-transactions.md#key-derivat
    * [`32*byte`:`per_commitment_secret`]
    * [`point`:`next_per_commitment_point`]
 
-#### Requirements
+###### Requirements
 
 A sending node:
   - MUST set `per_commitment_secret` to the secret used to generate keys for
@@ -2106,7 +1635,7 @@ A node:
   them (due to a failed connection),
     - Note: this is to reduce the above risk.
 
-### Updating Fees: `update_fee`
+##### Updating Fees: `update_fee`
 
 An `update_fee` message is sent by the node which is paying the
 Bitcoin fee. Like any update, it's first committed to the receiver's
@@ -2128,7 +1657,7 @@ given in [BOLT #3](03-transactions.md#fee-calculation).
    * [`channel_id`:`channel_id`]
    * [`u32`:`feerate_per_kw`]
 
-#### Requirements
+###### Requirements
 
 The node _responsible_ for paying the Bitcoin fee:
   - SHOULD send `update_fee` to ensure the current fee rate is sufficient (by a
@@ -2147,7 +1676,7 @@ A receiving node:
     - SHOULD fail the channel,
       - but MAY delay this check until the `update_fee` is committed.
 
-#### Rationale
+###### Rationale
 
 Bitcoin fees are required for unilateral closes to be effective —
 particularly since there is no general method for the broadcasting node to use
