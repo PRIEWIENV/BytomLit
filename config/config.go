@@ -46,6 +46,7 @@ type API struct {
 type Chain struct {
 	Name          string `json:"name"`
 	Upstream      string `json:"upstream"`
+	RPCPort       uint64 `json:"rpc_port"`
 	SyncSeconds   uint64 `json:"sync_seconds"`
 	Confirmations uint64 `json:"confirmations"`
 }

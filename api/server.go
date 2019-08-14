@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"net/rpc"
 	"reflect"
 	"strings"
 
@@ -18,6 +19,7 @@ type Server struct {
 	cfg    *config.Config
 	db     *gorm.DB
 	engine *gin.Engine
+	mainchainRPCClient *rpc.Client
 }
 
 func NewServer(db *gorm.DB, cfg *config.Config) *Server {
@@ -28,8 +30,20 @@ func NewServer(db *gorm.DB, cfg *config.Config) *Server {
 	if cfg.API.IsReleaseMode {
 		gin.SetMode(gin.ReleaseMode)
 	}
+	server.initRPCClient()
 	server.setupRouter()
 	return server
+}
+
+func (server *Server) initRPCClient() {
+	RPCAdress := server.cfg.Mainchain.Upstream + ":" + fmt.Sprintf("%d", server.cfg.Mainchain.RPCPort)
+	client, err := rpc.DialHTTP("tcp", RPCAdress)
+	if err != nil {
+			fmt.Println("Cannot connet RPC server: ", err)
+			return
+	}
+
+	server.mainchainRPCClient = client
 }
 
 func (server *Server) setupRouter() {

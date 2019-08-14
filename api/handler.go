@@ -16,6 +16,11 @@ type buildTxReq struct {
 	Memo    string `json:"memo"`
 }
 
+type sendTxReq struct {
+	Tx  string   `json:"transaction"`
+	Memo    string `json:"memo"`
+}
+
 type io struct {
 	Program   string     `json:"program"`
 	SourceID  btmBc.Hash `json:"source_id"`  // for input only
@@ -29,6 +34,56 @@ type buildTxResp struct {
 	RawTx *btmTypes.Tx `json:"raw_tx"`
 }
 
+type sendTxResp struct {
+
+}
+
+type dualFundReq struct {
+
+}
+
+type dualFundResp struct {
+
+}
+
+type pushReq struct {
+
+}
+
+type pushResp struct {
+
+}
+
+// DualFund makes the funding transaction and put it on Bytom chain
+func (s *Server) DualFund(c *gin.Context, req *dualFundReq) (*dualFundResp, error) {
+	resp := &dualFundResp{
+	}
+	
+	err := s.mainchainRPCClient.Call("dual-fund", req, resp)
+	if err != nil {
+		return nil, err
+	}
+
+	return resp, nil
+}
+
+// Push makes a payment to the peer
+func (s *Server) Push(c *gin.Context, req *pushReq) (*pushResp, error) {
+	resp := &pushResp{
+	}
+
+	return resp, nil
+}
+
+// CloseChannel closes the designated channel
+func (s *Server) CloseChannel(c *gin.Context, req *closeChannelReq) (*closeChannelResp, error) {
+	resp := &closeChannelResp{
+	}
+
+	return resp, nil
+}
+
+// BuildTx builds unsigned raw transactions
 func (s *Server) BuildTx(c *gin.Context, req *buildTxReq) (*buildTxResp, error) {
 	if b, err := json.Marshal(req); err == nil {
 		log.Println("received req:", string(b))
@@ -51,6 +106,14 @@ func (s *Server) BuildTx(c *gin.Context, req *buildTxReq) (*buildTxResp, error) 
 	// TODO: add witness?
 	resp := &buildTxResp{
 		RawTx: tx,
+	}
+
+	return resp, nil
+}
+
+// SendTx is 
+func (s *Server) SendTx(c *gin.Context, req *sendTxReq) (*sendTxResp, error) {
+	resp := &sendTxResp{
 	}
 
 	return resp, nil
