@@ -3,10 +3,14 @@ package api
 import (
 	"encoding/hex"
 	"encoding/json"
+	"context"
 	"log"
+	"fmt"
 
 	btmBc "github.com/bytom/protocol/bc"
 	btmTypes "github.com/bytom/protocol/bc/types"
+	"github.com/bytom/crypto"
+	"github.com/bytom/crypto/randentropy"
 	"github.com/gin-gonic/gin"
 )
 
@@ -16,10 +20,34 @@ type buildTxReq struct {
 	Memo    string `json:"memo"`
 }
 
+type signTxReq struct {
+	Tx  string   `json:"transaction"`
+	Memo    string `json:"memo"`
+}
+
 type sendTxReq struct {
 	Tx  string   `json:"transaction"`
 	Memo    string `json:"memo"`
 }
+
+type dualFundReq struct {
+	FundAssetID   string     `json:"asset_id"`
+	FundAmount    uint64     `json:"amount"`
+	PeerID        string     `json:"peer_id"`
+	PeerAssetID   string     `json:"asset_id"`
+	PeerAmount    uint64     `json:"amount"`
+}
+
+type pushReq struct {
+	AssetID   string     `json:"asset_id"`
+	Amount    uint64     `json:"amount"`
+	PeerID    string     `json:"peer_id"`
+}
+
+type closeChannelReq struct {
+
+}
+
 
 type io struct {
 	Program   string     `json:"program"`
@@ -38,19 +66,15 @@ type sendTxResp struct {
 
 }
 
-type dualFundReq struct {
-
-}
-
 type dualFundResp struct {
-
-}
-
-type pushReq struct {
-
+  TxID string `json:"tx_id"`
 }
 
 type pushResp struct {
+  Receipt string `json:"receipt"`
+}
+
+type closeChannelResp struct {
 
 }
 
@@ -59,7 +83,7 @@ func (s *Server) DualFund(c *gin.Context, req *dualFundReq) (*dualFundResp, erro
 	resp := &dualFundResp{
 	}
 	
-	err := s.mainchainRPCClient.Call("dual-fund", req, resp)
+	err := s.BytomRPCClient.Call(context.Background(), "dual-fund", &req, &resp)
 	if err != nil {
 		return nil, err
 	}
@@ -71,11 +95,25 @@ func (s *Server) DualFund(c *gin.Context, req *dualFundReq) (*dualFundResp, erro
 func (s *Server) Push(c *gin.Context, req *pushReq) (*pushResp, error) {
 	resp := &pushResp{
 	}
+	s.BytomRPCClient.Call(context.Background(), "compile", &req, &resp)
+	//RevokeCommitmentTx()
+	//BuildCommitmentTx()
 
 	return resp, nil
 }
 
+func BuildCommitmentTx(req *buildTxReq) (*buildTxResp, error) {
+	secret := randentropy.GetEntropyCSPRNG(32)
+	secretSha256 := crypto.Sha256(secret)
+	fmt.Println(secretSha256)
+	return BuildTx(req)
+}
+
+// func RevokeCommitmentTx() error {
+// }
+
 // CloseChannel closes the designated channel
+
 func (s *Server) CloseChannel(c *gin.Context, req *closeChannelReq) (*closeChannelResp, error) {
 	resp := &closeChannelResp{
 	}
@@ -85,6 +123,10 @@ func (s *Server) CloseChannel(c *gin.Context, req *closeChannelReq) (*closeChann
 
 // BuildTx builds unsigned raw transactions
 func (s *Server) BuildTx(c *gin.Context, req *buildTxReq) (*buildTxResp, error) {
+	return BuildTx(req)
+}
+
+func BuildTx(req *buildTxReq) (*buildTxResp, error) {
 	if b, err := json.Marshal(req); err == nil {
 		log.Println("received req:", string(b))
 	}

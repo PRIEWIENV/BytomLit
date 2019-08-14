@@ -4,12 +4,12 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"net/rpc"
 	"reflect"
 	"strings"
 
 	"github.com/gin-gonic/gin"
 	"github.com/jinzhu/gorm"
+	"github.com/bytom/blockchain/rpc"
 
 	"github.com/PRIEWIENV/PHTLC/config"
 	"github.com/PRIEWIENV/PHTLC/errors"
@@ -19,7 +19,7 @@ type Server struct {
 	cfg    *config.Config
 	db     *gorm.DB
 	engine *gin.Engine
-	mainchainRPCClient *rpc.Client
+	BytomRPCClient *rpc.Client
 }
 
 func NewServer(db *gorm.DB, cfg *config.Config) *Server {
@@ -37,13 +37,16 @@ func NewServer(db *gorm.DB, cfg *config.Config) *Server {
 
 func (server *Server) initRPCClient() {
 	RPCAdress := server.cfg.Mainchain.Upstream + ":" + fmt.Sprintf("%d", server.cfg.Mainchain.RPCPort)
-	client, err := rpc.DialHTTP("tcp", RPCAdress)
-	if err != nil {
-			fmt.Println("Cannot connet RPC server: ", err)
-			return
+	client := &rpc.Client{
+		BaseURL:     RPCAdress,
+		AccessToken: "test-user:test-secret",
 	}
+	// if err != nil {
+	// 		fmt.Println("Cannot connet RPC server: ", err)
+	// 		return
+	// }
 
-	server.mainchainRPCClient = client
+	server.BytomRPCClient = client
 }
 
 func (server *Server) setupRouter() {
