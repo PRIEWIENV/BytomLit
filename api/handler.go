@@ -15,9 +15,9 @@ import (
 )
 
 type buildTxReq struct {
-	Inputs  []io   `json:"inputs"`
-	Outputs []io   `json:"outputs"`
-	Memo    string `json:"memo"`
+	Inputs  []inputType  `json:"inputs"`
+	Outputs []outputType `json:"outputs"`
+	Memo    string       `json:"memo"`
 }
 
 type signTxReq struct {
@@ -26,8 +26,8 @@ type signTxReq struct {
 }
 
 type sendTxReq struct {
-	Tx  string   `json:"transaction"`
-	Memo    string `json:"memo"`
+	Tx   string `json:"transaction"`
+	Memo string `json:"memo"`
 }
 
 type dualFundReq struct {
@@ -45,16 +45,21 @@ type pushReq struct {
 }
 
 type closeChannelReq struct {
-
 }
 
-
-type io struct {
+type inputType struct {
 	Program   string     `json:"program"`
-	SourceID  btmBc.Hash `json:"source_id"`  // for input only
-	SourcePos uint64     `json:"source_pos"` // for input only
+	SourceID  btmBc.Hash `json:"source_id"`
+	SourcePos uint64     `json:"source_pos"`
 	AssetID   string     `json:"asset_id"`
 	Amount    uint64     `json:"amount"`
+	Arguments string     `json:"arguments"`
+}
+
+type outputType struct {
+	Program string `json:"program"`
+	AssetID string `json:"asset_id"`
+	Amount  uint64 `json:"amount"`
 }
 
 type buildTxResp struct {
@@ -63,7 +68,6 @@ type buildTxResp struct {
 }
 
 type sendTxResp struct {
-
 }
 
 type dualFundResp struct {
@@ -75,14 +79,12 @@ type pushResp struct {
 }
 
 type closeChannelResp struct {
-
 }
 
 // DualFund makes the funding transaction and put it on Bytom chain
 func (s *Server) DualFund(c *gin.Context, req *dualFundReq) (*dualFundResp, error) {
-	resp := &dualFundResp{
-	}
-	
+	resp := &dualFundResp{}
+
 	err := s.BytomRPCClient.Call(context.Background(), "dual-fund", &req, &resp)
 	if err != nil {
 		return nil, err
@@ -93,8 +95,7 @@ func (s *Server) DualFund(c *gin.Context, req *dualFundReq) (*dualFundResp, erro
 
 // Push makes a payment to the peer
 func (s *Server) Push(c *gin.Context, req *pushReq) (*pushResp, error) {
-	resp := &pushResp{
-	}
+	resp := &pushResp{}
 	s.BytomRPCClient.Call(context.Background(), "compile", &req, &resp)
 	//RevokeCommitmentTx()
 	//BuildCommitmentTx()
@@ -115,8 +116,7 @@ func BuildCommitmentTx(req *buildTxReq) (*buildTxResp, error) {
 // CloseChannel closes the designated channel
 
 func (s *Server) CloseChannel(c *gin.Context, req *closeChannelReq) (*closeChannelResp, error) {
-	resp := &closeChannelResp{
-	}
+	resp := &closeChannelResp{}
 
 	return resp, nil
 }
@@ -145,7 +145,15 @@ func BuildTx(req *buildTxReq) (*buildTxResp, error) {
 	}
 
 	tx := btmTypes.NewTx(*txData)
-	// TODO: add witness?
+	for i, input := range req.Inputs {
+		var args [][]byte
+		if err := json.Unmarshal([]byte(input.Arguments), &args); err != nil {
+			return nil, err
+		}
+
+		tx.Inputs[i].SetArguments(args)
+	}
+
 	resp := &buildTxResp{
 		RawTx: tx,
 	}
@@ -153,15 +161,14 @@ func BuildTx(req *buildTxReq) (*buildTxResp, error) {
 	return resp, nil
 }
 
-// SendTx is 
+// SendTx is
 func (s *Server) SendTx(c *gin.Context, req *sendTxReq) (*sendTxResp, error) {
-	resp := &sendTxResp{
-	}
+	resp := &sendTxResp{}
 
 	return resp, nil
 }
 
-func addInput(txData *btmTypes.TxData, input io) error {
+func addInput(txData *btmTypes.TxData, input inputType) error {
 	assetID := &btmBc.AssetID{}
 	if err := assetID.UnmarshalText([]byte(input.AssetID)); err != nil {
 		return err
@@ -177,7 +184,7 @@ func addInput(txData *btmTypes.TxData, input io) error {
 	return nil
 }
 
-func addOutput(txData *btmTypes.TxData, output io) error {
+func addOutput(txData *btmTypes.TxData, output outputType) error {
 	assetID := &btmBc.AssetID{}
 	if err := assetID.UnmarshalText([]byte(output.AssetID)); err != nil {
 		return err
