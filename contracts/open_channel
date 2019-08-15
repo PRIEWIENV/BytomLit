@@ -1,0 +1,14 @@
+contract OpenChannel(
+  publicKey1: PublicKey,
+  publicKey2: PublicKey,
+  blockHeight: Integer) locks valueAmount of valueAsset {
+  clause spend(sig1: Signature, sig2: Signature) {
+    verify checkTxMultiSig([publicKey1, publicKey2], [sig1, sig2])
+    unlock valueAmount of valueAsset
+  }
+  clause cancel(sig1: Signature) {
+    verify above(blockHeight)
+    verify checkTxSig(publicKey1, sig1)
+    unlock valueAmount of valueAsset
+  }
+}
