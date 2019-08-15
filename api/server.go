@@ -36,11 +36,15 @@ func NewServer(db *gorm.DB, cfg *config.Config) *Server {
 }
 
 func (server *Server) initRPCClient() {
-	RPCAdress := server.cfg.Mainchain.Upstream + ":" + fmt.Sprintf("%d", server.cfg.Mainchain.RPCPort)
+	RPCAdress := "http://" + server.cfg.Mainchain.Upstream + ":" + fmt.Sprintf("%d", server.cfg.Mainchain.RPCPort)
+	// fmt.Println("RPC address: ", RPCAdress)
 	client := &rpc.Client{
 		BaseURL:     RPCAdress,
 		AccessToken: "test-user:test-secret",
 	}
+	// respTest := &Response{}
+	// client.Call(context.Background(), "/gas-rate", nil, &respTest)
+	// fmt.Println(*respTest)
 	// if err != nil {
 	// 		fmt.Println("Cannot connet RPC server: ", err)
 	// 		return
@@ -54,6 +58,8 @@ func (server *Server) setupRouter() {
 	r.Use(server.middleware())
 
 	r.POST("/build-tx", handlerMiddleware(server.BuildTx))
+	r.POST("/dual-fund", handlerMiddleware(server.DualFund))
+	r.POST("/push", handlerMiddleware(server.Push))
 
 	server.engine = r
 }

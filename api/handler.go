@@ -14,6 +14,14 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+type Response struct {
+	Status      string      `json:"status,omitempty"`
+	Code        string      `json:"code,omitempty"`
+	Msg         string      `json:"msg,omitempty"`
+	ErrorDetail string      `json:"error_detail,detail,omitempty"`
+	Data        interface{} `json:"data,omitempty"`
+}
+
 type buildTxReq struct {
 	Inputs  []inputType  `json:"inputs"`
 	Outputs []outputType `json:"outputs"`
@@ -21,8 +29,8 @@ type buildTxReq struct {
 }
 
 type signTxReq struct {
-	Tx  string   `json:"transaction"`
-	Memo    string `json:"memo"`
+	Tx     string   `json:"transaction"`
+	Memo   string   `json:"memo"`
 }
 
 type sendTxReq struct {
@@ -42,6 +50,17 @@ type pushReq struct {
 	AssetID   string     `json:"asset_id"`
 	Amount    uint64     `json:"amount"`
 	PeerID    string     `json:"peer_id"`
+}
+
+type compileArg struct {
+	Boolean   bool       `json:"boolean,omitempty"`
+	Integer   uint64     `json:"integer,omitempty"`
+	String    string     `json:"string,omitempty"`
+}
+
+type compileReq struct {
+	Contract  string       `json:"contract"`
+	Arguments []compileArg `json:"args"`
 }
 
 type closeChannelReq struct {
@@ -78,19 +97,101 @@ type pushResp struct {
   Receipt string `json:"receipt"`
 }
 
+type compileResp struct {
+	Program string `json:"program"`
+}
+
 type closeChannelResp struct {
 }
 
 // DualFund makes the funding transaction and put it on Bytom chain
 func (s *Server) DualFund(c *gin.Context, req *dualFundReq) (*dualFundResp, error) {
 	resp := &dualFundResp{}
-
-	err := s.BytomRPCClient.Call(context.Background(), "dual-fund", &req, &resp)
+	// DEBUG: only for test
+	prog, err := s.DualFundScript("001400634e3bc1d423520f21f3dec9dc13ee90b8f6bb", "0014e7e89d57c4eac32d0507beb15f83d0d09320a9f6")
 	if err != nil {
 		return nil, err
 	}
-
+	fmt.Println(prog)
+	// buildReq := &buildTxReq{
+	// 	Inputs: []inputType{
+	// 		inputType{
+	// 			SourceID: "01c6ccc6f522228cd4518bba87e9c43fbf55fdf7eb17f5aa300a037db7dca0cb",
+	// 			SourcePos: 1,
+	// 			Program: "00148c9d063ff74ee6d9ffa88d83aeb038068366c4c4",
+	// 			AssetID: "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+	// 			Amount: 110000000,
+	// 		},
+	// 		inputType{
+	// 			SourceID: "d5156f4477fcb694388e6aed7ca390e5bc81bb725ce7461caa241777c1f62236",
+	// 			SourcePos: 2,
+	// 			Program: "00148c9d063ff74ee6d9ffa88d83aeb038068366c4c4",
+	// 			AssetID: "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+	// 			Amount: 110000000,
+	// 		},
+	// 	},
+	// 	Outputs: []outputType{
+	// 		outputType{
+	// 			Program: prog,
+	// 			AssetID: "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+	// 			Amount: 100000000,
+	// 		},
+	// 		outputType{
+	// 			Program: prog,
+	// 			AssetID: "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+	// 			Amount: 100000000,
+	// 		},
+	// 	},
+	// }
+	// respBuild, errBuild := BuildTx(buildReq)
+	// if errBuild != nil {
+  //   fmt.Println(errBuild) 
+	// }
 	return resp, nil
+}
+
+func (s *Server) DualFundScript(aPub, bPub string) (string, error) {
+	req := &compileReq{
+		Contract: dualFundContract,
+		Arguments: []compileArg{
+			compileArg{
+				String: aPub,
+			},
+			compileArg{
+				String: bPub,
+			},
+			compileArg{
+				Integer: dualFundInterval,
+			},
+		},
+	}
+	resp, err := s.Compile(req)
+	if err != nil {
+		return "", err
+	}
+	valueData, okData := resp.(map[string]interface{})
+	if !okData {
+		fmt.Errorf("It's not ok for type map[string]interface{}")
+		return "", nil
+	}
+	prog := valueData["program"]
+	valueProg, okProg := prog.(string)
+	if !okProg {
+		fmt.Errorf("It's not ok for type string")
+		return "", nil
+	}
+	return valueProg, nil
+}
+
+// Compile compiles contract to program
+func (s *Server) Compile(req *compileReq) (interface {}, error) {
+	resp := &Response{}
+	s.BytomRPCClient.Call(context.Background(), "/compile", &req, &resp)
+	if resp.Status != "success" {
+		fmt.Errorf(`got=%#v; Err=%#v`, resp.Status, resp.ErrorDetail)
+	}
+
+	return resp.Data, nil
 }
 
 // Push makes a payment to the peer
@@ -106,7 +207,7 @@ func (s *Server) Push(c *gin.Context, req *pushReq) (*pushResp, error) {
 func BuildCommitmentTx(req *buildTxReq) (*buildTxResp, error) {
 	secret := randentropy.GetEntropyCSPRNG(32)
 	secretSha256 := crypto.Sha256(secret)
-	fmt.Println(secretSha256)
+	fmt.Println("secretSha256: ", secretSha256)
 	return BuildTx(req)
 }
 
