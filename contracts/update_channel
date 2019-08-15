@@ -1,0 +1,16 @@
+contract UpdateChannel(
+  publicKey1: PublicKey,
+  publicKey2: PublicKey,
+  revocation1: Hash,
+  blockHeight: Integer) locks valueAmount of valueAsset {
+  clause spend(preimage1: String, sig2: Signature) {
+    verify sha256(preimage1) == revocation1
+    verify checkTxSig(publicKey2, sig2)
+    unlock valueAmount of valueAsset
+  }
+  clause cancel(sig1: Signature) {
+    verify above(blockHeight)
+    verify checkTxSig(publicKey1, sig1)
+    unlock valueAmount of valueAsset
+  }
+}

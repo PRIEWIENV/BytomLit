@@ -1,0 +1,66 @@
+{
+  "data":{
+    "clause_info":[
+      {
+        "name":"spend",
+        "params":[
+          {
+            "name":"sig1",
+            "type":"Signature"
+          },
+          {
+            "name":"sig2",
+            "type":"Signature"
+          }
+        ],
+        "values":[
+          {
+            "amount":"valueAmount",
+            "asset":"valueAsset",
+            "name":""
+          }
+        ]
+      },
+      {
+        "blockheight":[
+          "blockHeight"
+        ],
+        "name":"cancel",
+        "params":[
+          {
+            "name":"sig1",
+            "type":"Signature"
+          }
+        ],
+        "values":[
+          {
+            "amount":"valueAmount",
+            "asset":"valueAsset",
+            "name":""
+          }
+        ]
+      }
+    ],
+    "error":"",
+    "name":"OpenChannel",
+    "opcodes":"3 ROLL JUMPIF:$cancel $spend 3 ROLL 4 ROLL 2 TOALTSTACK TXSIGHASH 4 ROLL 4 ROLL 2 FROMALTSTACK SWAP CHECKMULTISIG JUMP:$_end $cancel ROT BLOCKHEIGHT LESSTHAN VERIFY ROT SWAP TXSIGHASH SWAP CHECKSIG $_end",
+    "params":[
+      {
+        "name":"publicKey1",
+        "type":"PublicKey"
+      },
+      {
+        "name":"publicKey2",
+        "type":"PublicKey"
+      },
+      {
+        "name":"blockHeight",
+        "type":"Integer"
+      }
+    ],
+    "program":"537a641b000000537a547a526bae547a547a526c7cad63240000007bcd9f697b7cae7cac",
+    "source":"contract OpenChannel(  publicKey1: PublicKey,  publicKey2: PublicKey,  blockHeight: Integer) locks valueAmount of valueAsset {  clause spend(sig1: Signature, sig2: Signature) {    verify checkTxMultiSig([publicKey1, publicKey2], [sig1, sig2])    unlock valueAmount of valueAsset  }  clause cancel(sig1: Signature) {    verify above(blockHeight)    verify checkTxSig(publicKey1, sig1)    unlock valueAmount of valueAsset  }}",
+    "value":"valueAmount of valueAsset"
+  },
+  "status":"success"
+}
