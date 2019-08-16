@@ -190,9 +190,82 @@ func (s *Server) DualFund(c *gin.Context, req *dualFundReq) (*dualFundResp, erro
 	if errBuild != nil {
     fmt.Println(errBuild) 
 	}
-	fmt.Println("raw_tx: ", respBuild.RawTx)
+	rawTxBytes, err := respBuild.RawTx.MarshalText()
+	if err != nil {
+		return resp, err
+	}
+	fmt.Println("raw_tx: ", rawTxBytes)
+	key0 := []key{
+		key{
+			XPub: "638c8504e6fafb6772cde16929108641dec7a5a974d9cc85d3dc9abe3c66f3fbc831371fe00fd80f258bfb05adcbb5182aa8c29f30d210e3a5599cfa3361f983",
+			DerivPath: []string{
+				"2c000000",
+				"99000000",
+				"01000000",
+				"01000000",
+				"01000000",
+			},
+		},
+	}
 
-	// s.SignTx()
+	key1 := []key{
+		key{
+			XPub: "638c8504e6fafb6772cde16929108641dec7a5a974d9cc85d3dc9abe3c66f3fbc831371fe00fd80f258bfb05adcbb5182aa8c29f30d210e3a5599cfa3361f983",
+			DerivPath: []string{
+				"2c000000",
+				"99000000",
+				"01000000",
+				"01000000",
+				"02000000",
+			},
+		},
+	}
+
+	witComps0 := []witnessComp{
+		witnessComp{
+			Keys: key0,
+			Sigs: nil,
+			Quorom: 1,
+			Type: "raw_tx_signature",
+		},
+		witnessComp{
+			Value: "62a73b6b7ffe52b6ad782b0e0efdc8309bf2f057d88f9a17d125e41bb11dbb88",
+			Type: "data",
+		},
+	}
+	witComps1 := []witnessComp{
+		witnessComp{
+			Keys: key1,
+			Sigs: nil,
+			Quorom: 1,
+			Type: "raw_tx_signature",
+		},
+		witnessComp{
+			Value: "ba5a63e7416caeb945eefc2ce874f40bc4aaf6005a1fc792557e41046f7e502f",
+			Type: "data",
+		},
+	}
+	tx := builtTx{
+		AllowAdditionalActions: false,
+		Local: true,
+		RawTx: string(rawTxBytes),
+		SigningIns: []signingInType{
+			signingInType{
+				Position: 0,
+				WitnessComps: witComps0,
+			},
+			signingInType{
+				Position: 1,
+				WitnessComps: witComps1,
+			},
+		},
+	}
+	signReq := &signTxReq{
+		Password: "12345",
+		Tx: tx,
+	}
+
+	s.SignTx(signReq)
 
 	return resp, nil
 }
