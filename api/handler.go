@@ -49,6 +49,7 @@ type witnessComp struct {
 	Keys          []key     `json:"keys,omitempty"`
 	Quorom        uint64    `json:"quorum,omitempty"`
 	Type          string	  `json:"type"`
+	Sigs					[]string	`json:"signatures",omitempty`
 	Value         string    `json:"value,omitempty"`
 }
 
@@ -113,6 +114,11 @@ type buildTxResp struct {
 type sendTxResp struct {
 }
 
+type signTxResp struct {
+	SignComplete	bool			`json:"sign_complete"`
+	Tx						builtTx		`json:"transaction"`
+}
+
 type dualFundResp struct {
   TxID string `json:"tx_id"`
 }
@@ -126,6 +132,7 @@ type compileResp struct {
 }
 
 type closeChannelResp struct {
+	Status string `json:"status"`
 }
 
 // BuildTx builds unsigned raw transactions
@@ -135,7 +142,10 @@ func (s *Server) BuildTx(c *gin.Context, req *buildTxReq) (*buildTxResp, error) 
 
 // DualFund makes the funding transaction and put it on Bytom chain
 func (s *Server) DualFund(c *gin.Context, req *dualFundReq) (*dualFundResp, error) {
-	resp := &dualFundResp{}
+	resp := &dualFundResp{
+		// DEBUG: Fake
+		TxID: "2c0624a7d251c29d4d1ad14297c69919214e78d995affd57e73fbf84ece316cb",
+	}
 	// DEBUG: only for test
 	prog, err := s.DualFundScript("001400634e3bc1d423520f21f3dec9dc13ee90b8f6bb", "0014e7e89d57c4eac32d0507beb15f83d0d09320a9f6")
 	if err != nil {
@@ -182,42 +192,34 @@ func (s *Server) DualFund(c *gin.Context, req *dualFundReq) (*dualFundResp, erro
 	}
 	fmt.Println("raw_tx: ", respBuild.RawTx)
 
+	// s.SignTx()
 
 	return resp, nil
 }
 
 // Push makes a payment to the peer
 func (s *Server) Push(c *gin.Context, req *pushReq) (*pushResp, error) {
-	resp := &pushResp{}
+	resp := &pushResp{
+		Receipt: "success",
+	}
 	secret := randentropy.GetEntropyCSPRNG(32)
 	secretSha256 := crypto.Sha256(secret)
 	fmt.Println("secretSha256: ", secretSha256)
+	prog, err := s.CommitScript("001400634e3bc1d423520f21f3dec9dc13ee90b8f6bb", "0014e7e89d57c4eac32d0507beb15f83d0d09320a9f6", string(secretSha256))
+	if err != nil {
+		return resp, err
+	}
+	log.Println(prog)
 
-	// reqComp := &compileReq{
-	// 	Contract: commitContract,
-	// 	Arguments: []compileArg{
-	// 		compileArg{
-	// 			String: req.PeerID,
-	// 		},
-	// 		compileArg{
-	// 			String: req.PeerID,
-	// 		},
-	// 		compileArg{
-	// 			String: string(secretSha256),
-	// 		},
-	// 		compileArg{
-	// 			Integer: 6,
-	// 		},
-	// 	},
-	// }
-	// respComp, errComp := s.Compile(reqComp)
-
+	resp.Receipt = prog
 	return resp, nil
 }
 
 // CloseChannel closes the designated channel
 func (s *Server) CloseChannel(c *gin.Context, req *closeChannelReq) (*closeChannelResp, error) {
-	resp := &closeChannelResp{}
+	resp := &closeChannelResp{
+		Status: "success",
+	}
 
 	return resp, nil
 }
@@ -227,6 +229,42 @@ func (s *Server) SendTx(req *sendTxReq) (*sendTxResp, error) {
 	resp := &sendTxResp{}
 
 	return resp, nil
+}
+
+func (s *Server) CommitScript(aPub, bPub, h string) (string, error) {
+	reqComp := &compileReq{
+		Contract: commitContract,
+		Arguments: []compileArg{
+			compileArg{
+				String: aPub,
+			},
+			compileArg{
+				String: bPub,
+			},
+			compileArg{
+				String: h,
+			},
+			compileArg{
+				Integer: 6,
+			},
+		},
+	}
+	respComp, errComp := s.Compile(reqComp)
+	if errComp != nil {
+		return "", errComp
+	}
+	valueData, okData := respComp.(map[string]interface{})
+	if !okData {
+		fmt.Errorf("It's not ok for type map[string]interface{}")
+		return "", nil
+	}
+	prog := valueData["program"]
+	valueProg, okProg := prog.(string)
+	if !okProg {
+		fmt.Errorf("It's not ok for type string")
+		return "", nil
+	}
+	return valueProg, nil
 }
 
 func (s *Server) DualFundScript(aPub, bPub string) (string, error) {
@@ -260,6 +298,13 @@ func (s *Server) DualFundScript(aPub, bPub string) (string, error) {
 		return "", nil
 	}
 	return valueProg, nil
+}
+
+func (s *Server) SignTx(req *signTxReq) (*signTxResp, error) {
+	resp := &signTxResp{}
+	s.BytomRPCClient.Call(context.Background(), "/sign-transaction", &req, &resp)
+
+	return resp, nil
 }
 
 // Compile compiles contract to program
