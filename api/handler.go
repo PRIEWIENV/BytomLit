@@ -106,6 +106,10 @@ type outputType struct {
 	Amount  uint64 `json:"amount"`
 }
 
+type submitTxReq struct {
+	RawTx string `json:"raw_transaction"`
+}
+
 type buildTxResp struct {
 	// TODO: add sign_insts?
 	RawTx *btmTypes.Tx `json:"raw_tx"`
@@ -135,6 +139,10 @@ type closeChannelResp struct {
 	Status string `json:"status"`
 }
 
+type submitTxResp struct {
+	TxID string `json:"tx_id"`
+}
+
 // BuildTx builds unsigned raw transactions
 func (s *Server) BuildTx(c *gin.Context, req *buildTxReq) (*buildTxResp, error) {
 	return BuildTx(req)
@@ -144,7 +152,8 @@ func (s *Server) BuildTx(c *gin.Context, req *buildTxReq) (*buildTxResp, error) 
 func (s *Server) DualFund(c *gin.Context, req *dualFundReq) (*dualFundResp, error) {
 	resp := &dualFundResp{
 		// DEBUG: Fake
-		TxID: "2c0624a7d251c29d4d1ad14297c69919214e78d995affd57e73fbf84ece316cb",
+		// TxID: "2c0624a7d251c29d4d1ad14297c69919214e78d995affd57e73fbf84ece316cb",
+		TxID: "Bad",
 	}
 	// DEBUG: only for test
 	prog, err := s.DualFundScript("001400634e3bc1d423520f21f3dec9dc13ee90b8f6bb", "0014e7e89d57c4eac32d0507beb15f83d0d09320a9f6")
@@ -186,15 +195,15 @@ func (s *Server) DualFund(c *gin.Context, req *dualFundReq) (*dualFundResp, erro
 			},
 		},
 	}
-	respBuild, errBuild := BuildTx(buildReq)
-	if errBuild != nil {
-    fmt.Println(errBuild) 
+	buildResp, buildErr := BuildTx(buildReq)
+	if buildErr != nil {
+    fmt.Println(buildErr) 
 	}
-	rawTxBytes, err := respBuild.RawTx.MarshalText()
-	if err != nil {
-		return resp, err
+	rawTxBytes, mErr := buildResp.RawTx.MarshalText()
+	if mErr != nil {
+		return nil, mErr
 	}
-	fmt.Println("raw_tx: ", rawTxBytes)
+	fmt.Println("raw_tx: ", string(rawTxBytes))
 	key0 := []key{
 		key{
 			XPub: "638c8504e6fafb6772cde16929108641dec7a5a974d9cc85d3dc9abe3c66f3fbc831371fe00fd80f258bfb05adcbb5182aa8c29f30d210e3a5599cfa3361f983",
@@ -265,7 +274,28 @@ func (s *Server) DualFund(c *gin.Context, req *dualFundReq) (*dualFundResp, erro
 		Tx: tx,
 	}
 
-	s.SignTx(signReq)
+	signResp, signErr := s.SignTx(signReq)
+	if !signResp.SignComplete || signErr != nil {
+		fmt.Println("signing not completed: ", signResp)
+		return resp, signErr
+	}
+
+	subReq := &submitTxReq{
+		RawTx: signResp.Tx.RawTx,
+	}
+	subResp, subErr := s.SubmitTx(subReq)
+	if subErr != nil {
+		fmt.Println(subErr)
+		return nil, subErr
+	}
+	resp.TxID = subResp.TxID
+	fmt.Println("signResp: ", signResp,"subResp: ", subResp)
+	return resp, nil
+}
+
+func (s *Server) SubmitTx(req *submitTxReq) (*submitTxResp, error) {
+	resp := &submitTxResp{}
+	s.BytomRPCClient.Call(context.Background(), "/submit-transaction", &req, &resp)
 
 	return resp, nil
 }
@@ -392,8 +422,8 @@ func (s *Server) Compile(req *compileReq) (interface {}, error) {
 }
 
 func (s *Server) BuildCommitmentTx(req *buildTxReq) (*buildTxResp, error) {
-	respBuild := &buildTxResp{}
-	return respBuild, nil
+	buildResp := &buildTxResp{}
+	return buildResp, nil
 }
 
 // func RevokeCommitmentTx() error {
