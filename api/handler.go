@@ -14,8 +14,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// Response is a
-type Response struct {
+type bytomResponse struct {
 	Status      string      `json:"status,omitempty"`
 	Code        string      `json:"code,omitempty"`
 	Msg         string      `json:"msg,omitempty"`
@@ -30,13 +29,37 @@ type buildTxReq struct {
 }
 
 type signTxReq struct {
-	Tx     string   `json:"transaction"`
-	Memo   string   `json:"memo"`
+	Password	string    `json:"password"`
+	Tx     		builtTx   `json:"transaction"`
+}
+
+type builtTx struct {
+	AllowAdditionalActions    bool              `json:"allow_additional_actions"`
+	Local                     bool              `json:"local"`
+	RawTx                     string            `json:"raw_transaction"`
+	SigningIns                []signingInType   `json:"signing_instructions"`
+}
+
+type signingInType struct {
+	Position       uint64          `json:"position"`
+	WitnessComps   []witnessComp   `json:"witness_components"`
+}
+
+type witnessComp struct {
+	Keys          []key     `json:"keys,omitempty"`
+	Quorom        uint64    `json:"quorum,omitempty"`
+	Type          string	  `json:"type"`
+	Value         string    `json:"value,omitempty"`
+}
+
+type key struct {
+	DerivPath    []string		`json:"derivation_path"`
+	XPub         string			`json:"xpub"`
 }
 
 type sendTxReq struct {
-	Tx   string `json:"transaction"`
-	Memo string `json:"memo"`
+	Tx		string		`json:"transaction"`
+	Memo	string 		`json:"memo"`
 }
 
 type dualFundReq struct {
@@ -157,7 +180,9 @@ func (s *Server) DualFund(c *gin.Context, req *dualFundReq) (*dualFundResp, erro
 	if errBuild != nil {
     fmt.Println(errBuild) 
 	}
-	fmt.Println(respBuild)
+	fmt.Println("raw_tx: ", respBuild.RawTx)
+
+
 	return resp, nil
 }
 
@@ -239,7 +264,7 @@ func (s *Server) DualFundScript(aPub, bPub string) (string, error) {
 
 // Compile compiles contract to program
 func (s *Server) Compile(req *compileReq) (interface {}, error) {
-	resp := &Response{}
+	resp := &bytomResponse{}
 	s.BytomRPCClient.Call(context.Background(), "/compile", &req, &resp)
 	if resp.Status != "success" {
 		fmt.Errorf(`got=%#v; Err=%#v`, resp.Status, resp.ErrorDetail)
@@ -277,13 +302,16 @@ func BuildTx(req *buildTxReq) (*buildTxResp, error) {
 	tx := btmTypes.NewTx(*txData)
 	for i, input := range req.Inputs {
 		var args [][]byte
-		if err := json.Unmarshal([]byte(input.Arguments), &args); err != nil {
-			return nil, err
+		// log.Println("mark", input)
+		if input.Arguments != "" {
+			if err := json.Unmarshal([]byte(input.Arguments), &args); err != nil {
+				return nil, err
+			}
 		}
 
 		tx.Inputs[i].SetArguments(args)
 	}
-
+	
 	resp := &buildTxResp{
 		RawTx: tx,
 	}
