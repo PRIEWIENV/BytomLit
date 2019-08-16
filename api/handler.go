@@ -64,11 +64,11 @@ type sendTxReq struct {
 }
 
 type dualFundReq struct {
-	FundAssetID   string     `json:"asset_id"`
-	FundAmount    uint64     `json:"amount"`
+	FundAssetID   string     `json:"fund_asset_id"`
+	FundAmount    uint64     `json:"fund_amount"`
 	PeerID        string     `json:"peer_id"`
-	PeerAssetID   string     `json:"asset_id"`
-	PeerAmount    uint64     `json:"amount"`
+	PeerAssetID   string     `json:"peer_asset_id"`
+	PeerAmount    uint64     `json:"peer_amount"`
 }
 
 type pushReq struct {
