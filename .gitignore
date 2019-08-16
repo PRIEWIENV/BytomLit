@@ -2,3 +2,8 @@
 tools/__pycache__/
 tools/*.py[cod]
 tools/*$py.class
+
+build/_workspace/
+
+node
+PHTLC

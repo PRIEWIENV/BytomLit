@@ -1,0 +1,23 @@
+{
+    "api" : {
+        "is_release_mode" : false,
+        "port" : 9000
+    },
+    "mysql" : {
+        "connection" : {
+            "host": "127.0.0.1",
+            "port": 3306,
+            "username": "root",
+            "password": "toor",
+            "database": "bytom_lightning"
+        },
+        "log_mode" : true
+    },
+    "mainchain" : {
+        "name" : "Bytom",
+        "upstream" : "52.82.55.145",
+        "rpc_port" : 9888,
+        "sync_seconds" : 5,
+        "confirmations" : 6
+    }
+}
