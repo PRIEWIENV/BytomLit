@@ -128,6 +128,7 @@ func (c *Client) CallRaw(ctx context.Context, path string, request interface{}) 
 	if client == nil {
 		client = http.DefaultClient
 	}
+
 	resp, err := client.Do(req.WithContext(ctx))
 	if err != nil && ctx.Err() != nil { // check if it timed out
 		return nil, errors.Wrap(ctx.Err())

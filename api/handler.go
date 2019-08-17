@@ -60,11 +60,6 @@ type key struct {
 	XPub         string			`json:"xpub"`
 }
 
-type sendTxReq struct {
-	Tx		string		`json:"transaction"`
-	Memo	string 		`json:"memo"`
-}
-
 type dualFundReq struct {
 	FundAssetID   string     `json:"fund_asset_id"`
 	FundAmount    uint64     `json:"fund_amount"`
@@ -117,9 +112,6 @@ type buildTxResp struct {
 	RawTx *btmTypes.Tx `json:"raw_tx"`
 }
 
-type sendTxResp struct {
-}
-
 type signTxResp struct {
 	SignComplete	bool			`json:"sign_complete"`
 	Tx						builtTx		`json:"transaction"`
@@ -152,11 +144,7 @@ func (s *Server) BuildTx(c *gin.Context, req *buildTxReq) (*buildTxResp, error) 
 
 // DualFund makes the funding transaction and put it on Bytom chain
 func (s *Server) DualFund(c *gin.Context, req *dualFundReq) (*dualFundResp, error) {
-	resp := &dualFundResp{
-		// DEBUG: Fake
-		// TxID: "2c0624a7d251c29d4d1ad14297c69919214e78d995affd57e73fbf84ece316cb",
-		TxID: "Bad",
-	}
+	resp := &dualFundResp{}
 	// DEBUG: only for test
 	// http://47.99.208.8/dashboard/transactions/a20cf80fb9e907826eb6f092ed5df3ec7bf94072ade273a76a272c9108af9129
 	prog, err := s.DualFundScript("b7e5e40c0de6d4cd0048968f047f1ed05215e04e03b7ce22f92ade9ff0791c5d", "343132656a747d98a40488fcd68670f6723abb1f29dfaba36a3b6af18c6360d4")
@@ -164,7 +152,6 @@ func (s *Server) DualFund(c *gin.Context, req *dualFundReq) (*dualFundResp, erro
 		fmt.Println(err)
 		return nil, err
 	}
-	log.Println("prog: ", prog)
 
 	sID1, sID2, sID3 := btmBc.Hash{}, btmBc.Hash{}, btmBc.Hash{}
 	sID1.UnmarshalText([]byte("dcdd21f5775d8205519204a9e8380632ba6d255f5d9f83640f7f00fe0414c942"))
@@ -221,7 +208,6 @@ func (s *Server) DualFund(c *gin.Context, req *dualFundReq) (*dualFundResp, erro
 	if mErr != nil {
 		return nil, mErr
 	}
-	log.Println("raw_tx: ", string(rawTxBytes))
 
 	// Sign the built transaction
 	key0 := []key{
@@ -321,27 +307,21 @@ func (s *Server) DualFund(c *gin.Context, req *dualFundReq) (*dualFundResp, erro
 	}
 
 	signResp, signErr := s.SignTx(signReq)
-	if !signResp.SignComplete || signErr != nil {
-		log.Println("signing not complete!!!")
-		return resp, signErr
+	if !signResp.SignComplete {
+		return nil, fmt.Errorf("signing not complete")
+	} else if signErr != nil {
+		return nil, signErr
 	}
 
+	// Submit the signed raw tx
 	subReq := &submitTxReq{
 		RawTx: signResp.Tx.RawTx,
 	}
 	subResp, subErr := s.SubmitTx(subReq)
 	if subErr != nil {
-		fmt.Println(subErr)
 		return nil, subErr
 	}
 	resp.TxID = subResp.TxID
-	fmt.Println("signResp: ", signResp,"subResp: ", subResp)
-	return resp, nil
-}
-
-func (s *Server) SubmitTx(req *submitTxReq) (*submitTxResp, error) {
-	resp := &submitTxResp{}
-	s.BytomRPCClient.Call(context.Background(), "/submit-transaction", &req, &resp)
 
 	return resp, nil
 }
@@ -369,13 +349,6 @@ func (s *Server) CloseChannel(c *gin.Context, req *closeChannelReq) (*closeChann
 	resp := &closeChannelResp{
 		Status: "success",
 	}
-
-	return resp, nil
-}
-
-// SendTx is
-func (s *Server) SendTx(req *sendTxReq) (*sendTxResp, error) {
-	resp := &sendTxResp{}
 
 	return resp, nil
 }
@@ -437,32 +410,49 @@ func (s *Server) DualFundScript(aPub, bPub string) (string, error) {
 	}
 	valueData, okData := resp.(map[string]interface{})
 	if !okData {
-		fmt.Errorf("It's not ok for type map[string]interface{}")
-		return "", nil
+		return "", fmt.Errorf("It's not ok for type map[string]interface{}")
 	}
 	prog := valueData["program"]
 	valueProg, okProg := prog.(string)
 	if !okProg {
-		fmt.Errorf("It's not ok for type string")
-		return "", nil
+		return "", fmt.Errorf("It's not ok for type string")
 	}
 	return valueProg, nil
 }
 
 func (s *Server) SignTx(req *signTxReq) (*signTxResp, error) {
-	resp := &signTxResp{}
-	// DEBUG
-	jsons, jErr := json.Marshal(req)
-	if jErr != nil {
-		fmt.Println(jErr.Error())
-		return nil, jErr
+	resp := &bytomResponse{
+		Data: &signTxResp{},
 	}
-	log.Println("jsonStr:", string(jsons))
-
 	s.BytomRPCClient.Call(context.Background(), "/sign-transaction", &req, &resp)
-	log.Printf("Real: %+v\n", *resp)
+	if resp.Status != "success" {
+		return nil, fmt.Errorf(`got=%#v; Err=%#v`, resp.Status, resp.ErrorDetail)
+	}
 
-	return resp, nil
+	vResp, ok := resp.Data.(*signTxResp)
+	if !ok {
+		return nil, fmt.Errorf("It's not ok for type *signTxResp")
+	}
+
+	return vResp, nil
+}
+
+// SubmitTx submits a raw transaction
+func (s *Server) SubmitTx(req *submitTxReq) (*submitTxResp, error) {
+	resp := &bytomResponse{
+		Data: &submitTxResp{},
+	}
+	s.BytomRPCClient.Call(context.Background(), "/submit-transaction", &req, &resp)
+	if resp.Status != "success" {
+		return nil, fmt.Errorf(`got=%#v; Err=%#v`, resp.Status, resp.ErrorDetail)
+	}
+
+	vResp, ok := resp.Data.(*submitTxResp)
+	if !ok {
+		return nil, fmt.Errorf("It's not ok for type *submitTxResp")
+	}
+
+	return vResp, nil
 }
 
 // Compile compiles contract to program
