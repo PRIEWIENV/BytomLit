@@ -6,11 +6,14 @@ import (
 	"net/http"
 	"reflect"
 	"strings"
+	"log"
+	"context"
 
 	"github.com/gin-gonic/gin"
 	"github.com/jinzhu/gorm"
 	"github.com/bytom/blockchain/rpc"
-
+	"github.com/bytom/api"
+	
 	"github.com/PRIEWIENV/PHTLC/config"
 	"github.com/PRIEWIENV/PHTLC/errors"
 )
@@ -36,19 +39,18 @@ func NewServer(db *gorm.DB, cfg *config.Config) *Server {
 }
 
 func (server *Server) initRPCClient() {
-	RPCAdress := "http://" + server.cfg.Mainchain.Upstream + ":" + fmt.Sprintf("%d", server.cfg.Mainchain.RPCPort)
-	// fmt.Println("RPC address: ", RPCAdress)
 	client := &rpc.Client{
-		BaseURL:     RPCAdress,
+		BaseURL:     server.cfg.Mainchain.Upstream,
 		AccessToken: "test-user:test-secret",
 	}
-	// respTest := &Response{}
-	// client.Call(context.Background(), "/gas-rate", nil, &respTest)
-	// fmt.Println(*respTest)
-	// if err != nil {
-	// 		fmt.Println("Cannot connet RPC server: ", err)
-	// 		return
-	// }
+	respTest := &api.Response{}
+	client.Call(context.Background(), "/gas-rate", nil, &respTest)
+	if respTest.Status == "success" {
+		log.Printf("RPC server[%v] connected.", client.BaseURL)
+	} else {
+		log.Printf("Cannot connet to RPC server[%v]!", client.BaseURL)
+		// return
+	}
 
 	server.BytomRPCClient = client
 }

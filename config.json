@@ -15,8 +15,7 @@
     },
     "mainchain" : {
         "name" : "Bytom",
-        "upstream" : "52.82.55.145",
-        "rpc_port" : 9888,
+        "upstream" : "http://47.99.208.8:9888",
         "sync_seconds" : 5,
         "confirmations" : 6
     }

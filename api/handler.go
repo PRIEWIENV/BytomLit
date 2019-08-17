@@ -10,6 +10,7 @@ import (
 	btmBc "github.com/bytom/protocol/bc"
 	btmTypes "github.com/bytom/protocol/bc/types"
 	"github.com/bytom/crypto"
+	// "github.com/bytom/consensus/segwit"
 	"github.com/bytom/crypto/randentropy"
 	"github.com/gin-gonic/gin"
 )
@@ -35,9 +36,10 @@ type signTxReq struct {
 
 type builtTx struct {
 	AllowAdditionalActions    bool              `json:"allow_additional_actions"`
-	Local                     bool              `json:"local"`
+	Local                     bool              `json:"local,omitempty"`
 	RawTx                     string            `json:"raw_transaction"`
 	SigningIns                []signingInType   `json:"signing_instructions"`
+	Fee												uint64						`json:"fee,omitempty"`
 }
 
 type signingInType struct {
@@ -49,7 +51,7 @@ type witnessComp struct {
 	Keys          []key     `json:"keys,omitempty"`
 	Quorom        uint64    `json:"quorum,omitempty"`
 	Type          string	  `json:"type"`
-	Sigs					[]string	`json:"signatures",omitempty`
+	Sigs					[]string	`json:"signatures,omitempty"`
 	Value         string    `json:"value,omitempty"`
 }
 
@@ -156,80 +158,108 @@ func (s *Server) DualFund(c *gin.Context, req *dualFundReq) (*dualFundResp, erro
 		TxID: "Bad",
 	}
 	// DEBUG: only for test
-	prog, err := s.DualFundScript("001400634e3bc1d423520f21f3dec9dc13ee90b8f6bb", "0014e7e89d57c4eac32d0507beb15f83d0d09320a9f6")
+	// http://47.99.208.8/dashboard/transactions/a20cf80fb9e907826eb6f092ed5df3ec7bf94072ade273a76a272c9108af9129
+	prog, err := s.DualFundScript("b7e5e40c0de6d4cd0048968f047f1ed05215e04e03b7ce22f92ade9ff0791c5d", "343132656a747d98a40488fcd68670f6723abb1f29dfaba36a3b6af18c6360d4")
 	if err != nil {
+		fmt.Println(err)
 		return nil, err
 	}
+	log.Println("prog: ", prog)
 
-	sID1, sID2 := btmBc.Hash{}, btmBc.Hash{}
-	sID1.UnmarshalText([]byte("01c6ccc6f522228cd4518bba87e9c43fbf55fdf7eb17f5aa300a037db7dca0cb"))
-	sID2.UnmarshalText([]byte("d5156f4477fcb694388e6aed7ca390e5bc81bb725ce7461caa241777c1f62236"))
+	sID1, sID2, sID3 := btmBc.Hash{}, btmBc.Hash{}, btmBc.Hash{}
+	sID1.UnmarshalText([]byte("dcdd21f5775d8205519204a9e8380632ba6d255f5d9f83640f7f00fe0414c942"))
+	sID2.UnmarshalText([]byte("dcdd21f5775d8205519204a9e8380632ba6d255f5d9f83640f7f00fe0414c942"))
+	sID3.UnmarshalText([]byte("d9b60b8b3d1e3d249b0efaefddd50a2bcc846f5462a2903c228d3c39b6dfcdf3"))
 
 	buildReq := &buildTxReq{
 		Inputs: []inputType{
 			inputType{
 				SourceID: sID1,
-				SourcePos: 1,
-				Program: "00148c9d063ff74ee6d9ffa88d83aeb038068366c4c4",
-				AssetID: "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
-				Amount: 110000000,
+				SourcePos: 2,
+				Program: "0014f077b8a83998adfa8df7c529e8643cfebce2dff8",
+				AssetID: "f08f0da2b982fdc7aab517de724be5e5eed1c49330826501c88a261ae9cb0edf",
+				Amount: 10000000000000000,
 			},
 			inputType{
 				SourceID: sID2,
-				SourcePos: 2,
-				Program: "00148c9d063ff74ee6d9ffa88d83aeb038068366c4c4",
+				SourcePos: 1,
+				Program: "001472e49786aea9ae75a5ec4543259b6d10c2c4f57d",
+				AssetID: "f08f0da2b982fdc7aab517de724be5e5eed1c49330826501c88a261ae9cb0edf",
+				Amount: 10000000000000000,
+			},
+			inputType{
+				SourceID: sID3,
+				SourcePos: 0,
+				Program: "001472e49786aea9ae75a5ec4543259b6d10c2c4f57d",
 				AssetID: "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
-				Amount: 110000000,
+				Amount: 41250000000,
 			},
 		},
 		Outputs: []outputType{
 			outputType{
 				Program: prog,
-				AssetID: "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
-				Amount: 100000000,
+				AssetID: "f08f0da2b982fdc7aab517de724be5e5eed1c49330826501c88a261ae9cb0edf",
+				Amount: 10000000000000000,
 			},
 			outputType{
 				Program: prog,
+				AssetID: "f08f0da2b982fdc7aab517de724be5e5eed1c49330826501c88a261ae9cb0edf",
+				Amount: 10000000000000000,
+			},
+			outputType{
+				Program: "0014a796b852f5db234d4450f80260e5640faf3808ce",
 				AssetID: "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
-				Amount: 100000000,
+				Amount: 41240000000,
 			},
 		},
 	}
 	buildResp, buildErr := BuildTx(buildReq)
 	if buildErr != nil {
-    fmt.Println(buildErr) 
+		return nil, buildErr
 	}
 	rawTxBytes, mErr := buildResp.RawTx.MarshalText()
 	if mErr != nil {
 		return nil, mErr
 	}
-	fmt.Println("raw_tx: ", string(rawTxBytes))
+	log.Println("raw_tx: ", string(rawTxBytes))
+
+	// Sign the built transaction
 	key0 := []key{
 		key{
-			XPub: "638c8504e6fafb6772cde16929108641dec7a5a974d9cc85d3dc9abe3c66f3fbc831371fe00fd80f258bfb05adcbb5182aa8c29f30d210e3a5599cfa3361f983",
+			XPub: "e0446ee8c0f0d559d6eeaeddf5b676ff89de4cdd0477f69f2662269f5e4a6e43d7e6aefa9547408839bc6796f9d22e6865c796d652027a966f1da46a34b94e78",
 			DerivPath: []string{
 				"2c000000",
 				"99000000",
 				"01000000",
-				"01000000",
-				"01000000",
-			},
-		},
-	}
-
-	key1 := []key{
-		key{
-			XPub: "638c8504e6fafb6772cde16929108641dec7a5a974d9cc85d3dc9abe3c66f3fbc831371fe00fd80f258bfb05adcbb5182aa8c29f30d210e3a5599cfa3361f983",
-			DerivPath: []string{
-				"2c000000",
-				"99000000",
-				"01000000",
-				"01000000",
+				"00000000",
 				"02000000",
 			},
 		},
 	}
-
+	key1 := []key{
+		key{
+			XPub: "e0446ee8c0f0d559d6eeaeddf5b676ff89de4cdd0477f69f2662269f5e4a6e43d7e6aefa9547408839bc6796f9d22e6865c796d652027a966f1da46a34b94e78",
+			DerivPath: []string{
+				"2c000000",
+				"99000000",
+				"01000000",
+				"00000000",
+				"01000000",
+			},
+		},
+	}
+	key2 := []key{
+		key{
+			XPub: "e0446ee8c0f0d559d6eeaeddf5b676ff89de4cdd0477f69f2662269f5e4a6e43d7e6aefa9547408839bc6796f9d22e6865c796d652027a966f1da46a34b94e78",
+			DerivPath: []string{
+				"2c000000",
+				"99000000",
+				"01000000",
+				"00000000",
+				"01000000",
+			},
+		},
+	}
 	witComps0 := []witnessComp{
 		witnessComp{
 			Keys: key0,
@@ -238,7 +268,7 @@ func (s *Server) DualFund(c *gin.Context, req *dualFundReq) (*dualFundResp, erro
 			Type: "raw_tx_signature",
 		},
 		witnessComp{
-			Value: "62a73b6b7ffe52b6ad782b0e0efdc8309bf2f057d88f9a17d125e41bb11dbb88",
+			Value: "18cd420713da2b5075f5282dc0ab8abd32e0ad0ec611ddc936d866e042973101",
 			Type: "data",
 		},
 	}
@@ -250,7 +280,19 @@ func (s *Server) DualFund(c *gin.Context, req *dualFundReq) (*dualFundResp, erro
 			Type: "raw_tx_signature",
 		},
 		witnessComp{
-			Value: "ba5a63e7416caeb945eefc2ce874f40bc4aaf6005a1fc792557e41046f7e502f",
+			Value: "d1a80162ad4c529000196b1c44d8bcb07b045190779648a1441e31d086d2e71d",
+			Type: "data",
+		},
+	}
+	witComps2 := []witnessComp{
+		witnessComp{
+			Keys: key2,
+			Sigs: nil,
+			Quorom: 1,
+			Type: "raw_tx_signature",
+		},
+		witnessComp{
+			Value: "d1a80162ad4c529000196b1c44d8bcb07b045190779648a1441e31d086d2e71d",
 			Type: "data",
 		},
 	}
@@ -267,6 +309,10 @@ func (s *Server) DualFund(c *gin.Context, req *dualFundReq) (*dualFundResp, erro
 				Position: 1,
 				WitnessComps: witComps1,
 			},
+			signingInType{
+				Position: 2,
+				WitnessComps: witComps2,
+			},
 		},
 	}
 	signReq := &signTxReq{
@@ -276,7 +322,7 @@ func (s *Server) DualFund(c *gin.Context, req *dualFundReq) (*dualFundResp, erro
 
 	signResp, signErr := s.SignTx(signReq)
 	if !signResp.SignComplete || signErr != nil {
-		fmt.Println("signing not completed: ", signResp)
+		log.Println("signing not complete!!!")
 		return resp, signErr
 	}
 
@@ -308,7 +354,7 @@ func (s *Server) Push(c *gin.Context, req *pushReq) (*pushResp, error) {
 	secret := randentropy.GetEntropyCSPRNG(32)
 	secretSha256 := crypto.Sha256(secret)
 	fmt.Println("secretSha256: ", secretSha256)
-	prog, err := s.CommitScript("001400634e3bc1d423520f21f3dec9dc13ee90b8f6bb", "0014e7e89d57c4eac32d0507beb15f83d0d09320a9f6", string(secretSha256))
+	prog, err := s.CommitScript("d1a80162ad4c529000196b1c44d8bcb07b045190779648a1441e31d086d2e71d", "18cd420713da2b5075f5282dc0ab8abd32e0ad0ec611ddc936d866e042973101", string(secretSha256))
 	if err != nil {
 		return resp, err
 	}
@@ -405,7 +451,16 @@ func (s *Server) DualFundScript(aPub, bPub string) (string, error) {
 
 func (s *Server) SignTx(req *signTxReq) (*signTxResp, error) {
 	resp := &signTxResp{}
+	// DEBUG
+	jsons, jErr := json.Marshal(req)
+	if jErr != nil {
+		fmt.Println(jErr.Error())
+		return nil, jErr
+	}
+	log.Println("jsonStr:", string(jsons))
+
 	s.BytomRPCClient.Call(context.Background(), "/sign-transaction", &req, &resp)
+	log.Printf("Real: %+v\n", *resp)
 
 	return resp, nil
 }
@@ -415,7 +470,7 @@ func (s *Server) Compile(req *compileReq) (interface {}, error) {
 	resp := &bytomResponse{}
 	s.BytomRPCClient.Call(context.Background(), "/compile", &req, &resp)
 	if resp.Status != "success" {
-		fmt.Errorf(`got=%#v; Err=%#v`, resp.Status, resp.ErrorDetail)
+		return nil, fmt.Errorf(`got=%#v; Err=%#v`, resp.Status, resp.ErrorDetail)
 	}
 
 	return resp.Data, nil

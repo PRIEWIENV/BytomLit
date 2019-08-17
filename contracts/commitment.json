@@ -49,7 +49,7 @@
       }
     ],
     "error":"",
-    "name":"UpdateChannel",
+    "name":"Commitment",
     "opcodes":"4 ROLL JUMPIF:$cancel $spend 5 ROLL SHA256 3 ROLL EQUALVERIFY 3 ROLL ROT TXSIGHASH SWAP CHECKSIG JUMP:$_end $cancel 3 ROLL BLOCKHEIGHT LESSTHAN VERIFY 3 ROLL SWAP TXSIGHASH SWAP CHECKSIG $_end",
     "params":[
       {
@@ -70,7 +70,7 @@
       }
     ],
     "program":"547a6418000000557aa8537a88537a7bae7cac6323000000537acd9f69537a7cae7cac",
-    "source":"contract UpdateChannel(  publicKey1: PublicKey,  publicKey2: PublicKey,  revocation1: Hash,  blockHeight: Integer) locks valueAmount of valueAsset {  clause spend(preimage1: String, sig2: Signature) {    verify sha256(preimage1) == revocation1    verify checkTxSig(publicKey2, sig2)    unlock valueAmount of valueAsset  }  clause cancel(sig1: Signature) {    verify above(blockHeight)    verify checkTxSig(publicKey1, sig1)    unlock valueAmount of valueAsset  }}",
+    "source":"contract Commitment(  publicKey1: PublicKey,  publicKey2: PublicKey,  revocation1: Hash,  blockHeight: Integer) locks valueAmount of valueAsset {  clause spend(preimage1: String, sig2: Signature) {    verify sha256(preimage1) == revocation1    verify checkTxSig(publicKey2, sig2)    unlock valueAmount of valueAsset  }  clause cancel(sig1: Signature) {    verify above(blockHeight)    verify checkTxSig(publicKey1, sig1)    unlock valueAmount of valueAsset  }}",
     "value":"valueAmount of valueAsset"
   },
   "status":"success"

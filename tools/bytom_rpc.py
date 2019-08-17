@@ -1,6 +1,6 @@
 import requests
 
-url = "http://52.82.55.145:9888/"
+url = "http://47.99.208.8:9888/"
 
 def call(cmd, param):
     request_url = url + cmd

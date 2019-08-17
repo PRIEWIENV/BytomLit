@@ -21,7 +21,7 @@ def main():
             sys.exit()
         elif opt == "-i":
             in_file = arg
-        elif opt == "-o"::
+        elif opt == "-o":
             out_file = arg
         elif opt == "-a":
             args_file = arg
@@ -34,6 +34,7 @@ def main():
     with open(in_file, 'r') as f:
         contract = f.read().replace('\n', '')
         data['contract'] = contract
+        print(contract)
     if args_file:
         with open(args_file, 'r') as f:
             args = json.loads(f.read())

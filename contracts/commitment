@@ -1,4 +1,4 @@
-contract UpdateChannel(
+contract Commitment(
   publicKey1: PublicKey,
   publicKey2: PublicKey,
   revocation1: Hash,
