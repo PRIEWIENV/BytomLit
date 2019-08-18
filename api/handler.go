@@ -86,6 +86,7 @@ type compileReq struct {
 }
 
 type closeChannelReq struct {
+	Receipt string `json:"receipt"`
 }
 
 type inputType struct {
@@ -216,7 +217,7 @@ func (s *Server) DualFundRaw(inputs *[]inputType, aPub string, bPub string) (*du
 		Amount: bInput.Amount,
 	}
 	gasOutput := outputType{
-		Program: prog,
+		Program: "0014a796b852f5db234d4450f80260e5640faf3808ce",
 		AssetID: "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
 		Amount: gasInput.Amount - estimatedGasFee,
 	}
@@ -342,15 +343,14 @@ func (s *Server) DualFundRaw(inputs *[]inputType, aPub string, bPub string) (*du
 	}
 
 	// Estimate tx gas
-	estGasResp, gErr := s.EstTxGas(
-		&estTxGasReq{
-			TxTemp: tx,
-		},
-	)
-	if gErr != nil {
-		return nil, gErr
-	}
-	fmt.Printf("%+v", estGasResp)
+	// estGasResp, gErr := s.EstTxGas(
+	// 	&estTxGasReq{
+	// 		TxTemp: tx,
+	// 	},
+	// )
+	// if gErr != nil {
+	// 	return nil, gErr
+	// }
 
 	// Sign tx
 	signReq := &signTxReq{
@@ -358,16 +358,18 @@ func (s *Server) DualFundRaw(inputs *[]inputType, aPub string, bPub string) (*du
 		Tx: tx,
 	}
 	signResp, signErr := s.SignTx(signReq)
+	
 	if !signResp.SignComplete {
 		return nil, fmt.Errorf("signing not complete")
 	} else if signErr != nil {
 		return nil, signErr
 	}
-
+	
 	// Submit the signed raw tx
 	subReq := &submitTxReq{
 		RawTx: signResp.Tx.RawTx,
 	}
+	fmt.Printf("%+v", subReq)
 	subResp, subErr := s.SubmitTx(subReq)
 	if subErr != nil {
 		return nil, subErr
@@ -382,24 +384,206 @@ func (s *Server) Push(c *gin.Context, req *pushReq) (*pushResp, error) {
 	resp := &pushResp{
 		Receipt: "success",
 	}
+	aPub := "b7e5e40c0de6d4cd0048968f047f1ed05215e04e03b7ce22f92ade9ff0791c5d"
+	bPub := "343132656a747d98a40488fcd68670f6723abb1f29dfaba36a3b6af18c6360d4"
 	secret := randentropy.GetEntropyCSPRNG(32)
 	secretSha256 := crypto.Sha256(secret)
-	fmt.Println("secretSha256: ", secretSha256)
-	prog, err := s.CommitScript("d1a80162ad4c529000196b1c44d8bcb07b045190779648a1441e31d086d2e71d", "18cd420713da2b5075f5282dc0ab8abd32e0ad0ec611ddc936d866e042973101", string(secretSha256))
+	prog, err := s.CommitScript(aPub, bPub, hex.EncodeToString(secretSha256))
 	if err != nil {
 		return resp, err
 	}
 	log.Println(prog)
 
-	resp.Receipt = prog
+	estimatedGasFee := uint64(10000000)
+	fundSourceID, gasSourceID := btmBc.Hash{}, btmBc.Hash{}
+	fundSourceID.UnmarshalText([]byte("7423542dade2528182812b199eafedc8cb013f04dcf62ddae0c4ef207bfd4e8a"))
+	gasSourceID.UnmarshalText([]byte("409fa556dad4ab99f1cedf78656b9221231aa70f06cb531e4df068127598582e"))
+	fundInput := inputType{
+		SourceID: fundSourceID,
+		SourcePos: 1,
+		Program: "5a20343132656a747d98a40488fcd68670f6723abb1f29dfaba36a3b6af18c6360d420b7e5e40c0de6d4cd0048968f047f1ed05215e04e03b7ce22f92ade9ff0791c5d7424537a641b000000537a547a526bae547a547a526c7cad63240000007bcd9f697b7cae7cac00c0",
+		AssetID: "f08f0da2b982fdc7aab517de724be5e5eed1c49330826501c88a261ae9cb0edf",
+		Amount: 10000000000000000,
+	}
+	gasInput := inputType{
+		SourceID: gasSourceID,
+		SourcePos: 0,
+		Program: "001472e49786aea9ae75a5ec4543259b6d10c2c4f57d",
+		AssetID: "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+		Amount: 41250000000,
+	}
+
+	// Build unsigned Tx
+	aOutput := outputType{
+		Program: "0014a796b852f5db234d4450f80260e5640faf3808ce",
+		AssetID: fundInput.AssetID,
+		Amount: fundInput.Amount,
+	}
+	// bOutput := outputType{
+	// 	Program: prog,
+	// 	AssetID: fundInput.AssetID,
+	// 	Amount: fundInput.Amount,
+	// }
+	gasOutput := outputType{
+		Program: "0014a796b852f5db234d4450f80260e5640faf3808ce",
+		AssetID: "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+		Amount: gasInput.Amount - estimatedGasFee,
+	}
+
+	bTxReq := &buildTxReq{
+		Inputs: []inputType{
+			fundInput,
+			gasInput,
+		},
+		Outputs: []outputType{
+			aOutput,
+			// bOutput,
+			gasOutput,
+		},
+	}
+	bTxResp, bTxErr := BuildTx(bTxReq)
+	if bTxErr != nil {
+		return nil, bTxErr
+	}
+	rawTxBytes, mErr := bTxResp.RawTx.MarshalText()
+	if mErr != nil {
+		return nil, mErr
+	}
+
+	// DEBUG
+	fundInputKeys := []key{
+		key{
+			XPub: "e0446ee8c0f0d559d6eeaeddf5b676ff89de4cdd0477f69f2662269f5e4a6e43d7e6aefa9547408839bc6796f9d22e6865c796d652027a966f1da46a34b94e78",
+			DerivPath: []string{
+				"2c000000",
+				"99000000",
+				"01000000",
+				"00000000",
+				"02000000",
+			},
+		},
+		key{
+			XPub: "e0446ee8c0f0d559d6eeaeddf5b676ff89de4cdd0477f69f2662269f5e4a6e43d7e6aefa9547408839bc6796f9d22e6865c796d652027a966f1da46a34b94e78",
+			DerivPath: []string{
+				"2c000000",
+				"99000000",
+				"01000000",
+				"00000000",
+				"01000000",
+			},
+		},
+	}
+	gasInputKeys := []key{
+		key{
+			XPub: "e0446ee8c0f0d559d6eeaeddf5b676ff89de4cdd0477f69f2662269f5e4a6e43d7e6aefa9547408839bc6796f9d22e6865c796d652027a966f1da46a34b94e78",
+			DerivPath: []string{
+				"2c000000",
+				"99000000",
+				"01000000",
+				"00000000",
+				"01000000",
+			},
+		},
+	}
+	aInputPub := "18cd420713da2b5075f5282dc0ab8abd32e0ad0ec611ddc936d866e042973101"
+	bInputPub := "d1a80162ad4c529000196b1c44d8bcb07b045190779648a1441e31d086d2e71d"
+	gasInputPub := "d1a80162ad4c529000196b1c44d8bcb07b045190779648a1441e31d086d2e71d"
+	fQ, gasQ := uint64(2), uint64(1)
+	// DEBUG: ============
+	// Construct builtTx
+	fundInputWit := []witnessComp{
+		witnessComp{
+			Keys: fundInputKeys,
+			Sigs: nil,
+			Quorom: fQ,
+			Type: "raw_tx_signature",
+		},
+		witnessComp{
+			Value: aInputPub,
+			Type: "data",
+		},
+		witnessComp{
+			Value: bInputPub,
+			Type: "data",
+		},
+	}
+	gasInputWit := []witnessComp{
+		witnessComp{
+			Keys: gasInputKeys,
+			Sigs: nil,
+			Quorom: gasQ,
+			Type: "raw_tx_signature",
+		},
+		witnessComp{
+			Value: gasInputPub,
+			Type: "data",
+		},
+	}
+	tx := builtTx{
+		AllowAdditionalActions: false,
+		Local: true,
+		RawTx: string(rawTxBytes),
+		SigningIns: []signingInType{
+			signingInType{
+				Position: 0,
+				WitnessComps: fundInputWit,
+			},
+			signingInType{
+				Position: 1,
+				WitnessComps: gasInputWit,
+			},
+		},
+	}
+
+	// Estimate tx gas
+	// estGasResp, gErr := s.EstTxGas(
+	// 	&estTxGasReq{
+	// 		TxTemp: tx,
+	// 	},
+	// )
+	// if gErr != nil {
+	// 	return nil, gErr
+	// }
+
+	// Sign tx
+	signReq := &signTxReq{
+		Password: "12345",
+		Tx: tx,
+	}
+	signResp, signErr := s.SignTx(signReq)
+	if signErr != nil {
+		return nil, signErr
+	}
+	signReq2 := &signTxReq{
+		Password: "12345",
+		Tx: signResp.Tx,
+	}
+	signResp2, signErr2 := s.SignTx(signReq2)
+	if !signResp2.SignComplete {
+		return nil, fmt.Errorf("signing not complete")
+	} else if signErr2 != nil {
+		return nil, signErr
+	}
+
+	resp.Receipt = signResp2.Tx.RawTx
 	return resp, nil
 }
 
 // CloseChannel closes the designated channel
+// Receipt: 0701000201b90101b6017423542dade2528182812b199eafedc8cb013f04dcf62ddae0c4ef207bfd4e8af08f0da2b982fdc7aab517de724be5e5eed1c49330826501c88a261ae9cb0edf808084fea6dee11101016b5a20343132656a747d98a40488fcd68670f6723abb1f29dfaba36a3b6af18c6360d420b7e5e40c0de6d4cd0048968f047f1ed05215e04e03b7ce22f92ade9ff0791c5d7424537a641b000000537a547a526bae547a547a526c7cad63240000007bcd9f697b7cae7cac00c0c5010440fd083f7923f88d5a3d427e6519d149573d34fcdbf18d583ecd26d5ac2dba198b2cd5a455140dea12746a80df80daf6312173941fe4d4d28aadeb72549f04140240f3fae7a1734cb144c75e5d370ffcf42c746ce9008d0121551751da06d0ebbb30d0886fbf0966b713572350afb10b537a4585252cc2065f9b8dcbd939e2f1c10c2018cd420713da2b5075f5282dc0ab8abd32e0ad0ec611ddc936d866e04297310120d1a80162ad4c529000196b1c44d8bcb07b045190779648a1441e31d086d2e71d0161015f409fa556dad4ab99f1cedf78656b9221231aa70f06cb531e4df068127598582effffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff8099c4d59901000116001472e49786aea9ae75a5ec4543259b6d10c2c4f57d6302400903027dc48f4352d08169be7cf7d44e6cf5e2f373d9f666bbd4729ee52c6751c69d52dc868992dae1900a814adf3fcbd41a87a64b4a9c677f93119cf7f59c0020d1a80162ad4c529000196b1c44d8bcb07b045190779648a1441e31d086d2e71d020140f08f0da2b982fdc7aab517de724be5e5eed1c49330826501c88a261ae9cb0edf808084fea6dee11101160014a796b852f5db234d4450f80260e5640faf3808ce00013effffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff80ece1d0990101160014a796b852f5db234d4450f80260e5640faf3808ce00
+// http://47.99.208.8/dashboard/transactions/a1c6173d238e15f1dd1f589ac371a891612cbe2b9e2ccc41ae898d3f468eda4e
 func (s *Server) CloseChannel(c *gin.Context, req *closeChannelReq) (*closeChannelResp, error) {
 	resp := &closeChannelResp{
-		Status: "success",
+		Status: "fail",
 	}
+	subTxReq := &submitTxReq{
+		RawTx: req.Receipt,
+	}
+	subTxResp, sErr := s.SubmitTx(subTxReq)
+	if sErr != nil {
+		return resp, sErr
+	}
+	resp.Status = subTxResp.TxID
 
 	return resp, nil
 }
