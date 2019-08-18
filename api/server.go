@@ -59,7 +59,6 @@ func (server *Server) setupRouter() {
 	r := gin.Default()
 	r.Use(server.middleware())
 
-	r.POST("/build-tx", handlerMiddleware(server.BuildTx))
 	// r.POST("/sweep", handlerMiddleware(server.Sweep))
 	r.POST("/dual-fund", handlerMiddleware(server.DualFund))
 	r.POST("/push", handlerMiddleware(server.Push))

@@ -137,80 +137,113 @@ type submitTxResp struct {
 	TxID string `json:"tx_id"`
 }
 
-// BuildTx builds unsigned raw transactions
-func (s *Server) BuildTx(c *gin.Context, req *buildTxReq) (*buildTxResp, error) {
-	return BuildTx(req)
+type dualFundRawType struct {
+	OutputPub string
+	Input inputType
+}
+
+type estTxGasReq struct {
+	TxTemp builtTx `json:"transaction_template"`
+}
+
+type estTxGasResp struct {
+	TotalNeu		uint64	`json:"total_neu"`
+	StorageNeu 	uint64 	`json:"storage_neu"`
+	VMNeu 			uint64	`json:"vm_neu"`
+}
+
+func (s *Server) DualFund(c *gin.Context, req *dualFundReq) (*dualFundResp, error) {
+	// DEBUG: only for test
+	// http://47.99.208.8/dashboard/transactions/a20cf80fb9e907826eb6f092ed5df3ec7bf94072ade273a76a272c9108af9129
+	aPub := "b7e5e40c0de6d4cd0048968f047f1ed05215e04e03b7ce22f92ade9ff0791c5d"
+	bPub := "343132656a747d98a40488fcd68670f6723abb1f29dfaba36a3b6af18c6360d4"
+	sID1, sID2, sID3 := btmBc.Hash{}, btmBc.Hash{}, btmBc.Hash{}
+	sID1.UnmarshalText([]byte("dcdd21f5775d8205519204a9e8380632ba6d255f5d9f83640f7f00fe0414c942"))
+	sID2.UnmarshalText([]byte("dcdd21f5775d8205519204a9e8380632ba6d255f5d9f83640f7f00fe0414c942"))
+	sID3.UnmarshalText([]byte("d9b60b8b3d1e3d249b0efaefddd50a2bcc846f5462a2903c228d3c39b6dfcdf3"))
+	aInput := inputType{
+		SourceID: sID1,
+		SourcePos: 2,
+		Program: "0014f077b8a83998adfa8df7c529e8643cfebce2dff8",
+		AssetID: "f08f0da2b982fdc7aab517de724be5e5eed1c49330826501c88a261ae9cb0edf",
+		Amount: 10000000000000000,
+	}
+	bInput := inputType{
+		SourceID: sID2,
+		SourcePos: 1,
+		Program: "001472e49786aea9ae75a5ec4543259b6d10c2c4f57d",
+		AssetID: "f08f0da2b982fdc7aab517de724be5e5eed1c49330826501c88a261ae9cb0edf",
+		Amount: 10000000000000000,
+	}
+	gasInput := inputType{
+		SourceID: sID3,
+		SourcePos: 0,
+		Program: "001472e49786aea9ae75a5ec4543259b6d10c2c4f57d",
+		AssetID: "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+		Amount: 41250000000,
+	}
+	inputs := &[]inputType{
+		aInput,
+		bInput,
+		gasInput,
+	}
+	return s.DualFundRaw(inputs, aPub, bPub)
 }
 
 // DualFund makes the funding transaction and put it on Bytom chain
-func (s *Server) DualFund(c *gin.Context, req *dualFundReq) (*dualFundResp, error) {
+func (s *Server) DualFundRaw(inputs *[]inputType, aPub string, bPub string) (*dualFundResp, error) {
 	resp := &dualFundResp{}
-	// DEBUG: only for test
-	// http://47.99.208.8/dashboard/transactions/a20cf80fb9e907826eb6f092ed5df3ec7bf94072ade273a76a272c9108af9129
-	prog, err := s.DualFundScript("b7e5e40c0de6d4cd0048968f047f1ed05215e04e03b7ce22f92ade9ff0791c5d", "343132656a747d98a40488fcd68670f6723abb1f29dfaba36a3b6af18c6360d4")
+	// Compile contract
+	prog, err := s.DualFundScript(aPub, bPub)
 	if err != nil {
 		fmt.Println(err)
 		return nil, err
 	}
 
-	sID1, sID2, sID3 := btmBc.Hash{}, btmBc.Hash{}, btmBc.Hash{}
-	sID1.UnmarshalText([]byte("dcdd21f5775d8205519204a9e8380632ba6d255f5d9f83640f7f00fe0414c942"))
-	sID2.UnmarshalText([]byte("dcdd21f5775d8205519204a9e8380632ba6d255f5d9f83640f7f00fe0414c942"))
-	sID3.UnmarshalText([]byte("d9b60b8b3d1e3d249b0efaefddd50a2bcc846f5462a2903c228d3c39b6dfcdf3"))
+	estimatedGasFee := uint64(10000000)
+	aInput := (*inputs)[0]
+	bInput := (*inputs)[1]
+	gasInput := (*inputs)[2]
+	// Build unsigned Tx
+	aOutput := outputType{
+		Program: prog,
+		AssetID: aInput.AssetID,
+		Amount: aInput.Amount,
+	}
+	bOutput := outputType{
+		Program: prog,
+		AssetID: bInput.AssetID,
+		Amount: bInput.Amount,
+	}
+	gasOutput := outputType{
+		Program: prog,
+		AssetID: "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+		Amount: gasInput.Amount - estimatedGasFee,
+	}
 
-	buildReq := &buildTxReq{
+	bTxReq := &buildTxReq{
 		Inputs: []inputType{
-			inputType{
-				SourceID: sID1,
-				SourcePos: 2,
-				Program: "0014f077b8a83998adfa8df7c529e8643cfebce2dff8",
-				AssetID: "f08f0da2b982fdc7aab517de724be5e5eed1c49330826501c88a261ae9cb0edf",
-				Amount: 10000000000000000,
-			},
-			inputType{
-				SourceID: sID2,
-				SourcePos: 1,
-				Program: "001472e49786aea9ae75a5ec4543259b6d10c2c4f57d",
-				AssetID: "f08f0da2b982fdc7aab517de724be5e5eed1c49330826501c88a261ae9cb0edf",
-				Amount: 10000000000000000,
-			},
-			inputType{
-				SourceID: sID3,
-				SourcePos: 0,
-				Program: "001472e49786aea9ae75a5ec4543259b6d10c2c4f57d",
-				AssetID: "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
-				Amount: 41250000000,
-			},
+			aInput,
+			bInput,
+			gasInput,
 		},
 		Outputs: []outputType{
-			outputType{
-				Program: prog,
-				AssetID: "f08f0da2b982fdc7aab517de724be5e5eed1c49330826501c88a261ae9cb0edf",
-				Amount: 10000000000000000,
-			},
-			outputType{
-				Program: prog,
-				AssetID: "f08f0da2b982fdc7aab517de724be5e5eed1c49330826501c88a261ae9cb0edf",
-				Amount: 10000000000000000,
-			},
-			outputType{
-				Program: "0014a796b852f5db234d4450f80260e5640faf3808ce",
-				AssetID: "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
-				Amount: 41240000000,
-			},
+			aOutput,
+			bOutput,
+			gasOutput,
 		},
 	}
-	buildResp, buildErr := BuildTx(buildReq)
-	if buildErr != nil {
-		return nil, buildErr
+	bTxResp, bTxErr := BuildTx(bTxReq)
+	if bTxErr != nil {
+		return nil, bTxErr
 	}
-	rawTxBytes, mErr := buildResp.RawTx.MarshalText()
+	rawTxBytes, mErr := bTxResp.RawTx.MarshalText()
 	if mErr != nil {
 		return nil, mErr
 	}
 
-	// Sign the built transaction
-	key0 := []key{
+	// DEBUG
+	aInputKeys := []key{
 		key{
 			XPub: "e0446ee8c0f0d559d6eeaeddf5b676ff89de4cdd0477f69f2662269f5e4a6e43d7e6aefa9547408839bc6796f9d22e6865c796d652027a966f1da46a34b94e78",
 			DerivPath: []string{
@@ -222,7 +255,7 @@ func (s *Server) DualFund(c *gin.Context, req *dualFundReq) (*dualFundResp, erro
 			},
 		},
 	}
-	key1 := []key{
+	bInputKeys := []key{
 		key{
 			XPub: "e0446ee8c0f0d559d6eeaeddf5b676ff89de4cdd0477f69f2662269f5e4a6e43d7e6aefa9547408839bc6796f9d22e6865c796d652027a966f1da46a34b94e78",
 			DerivPath: []string{
@@ -234,7 +267,7 @@ func (s *Server) DualFund(c *gin.Context, req *dualFundReq) (*dualFundResp, erro
 			},
 		},
 	}
-	key2 := []key{
+	gasInputKeys := []key{
 		key{
 			XPub: "e0446ee8c0f0d559d6eeaeddf5b676ff89de4cdd0477f69f2662269f5e4a6e43d7e6aefa9547408839bc6796f9d22e6865c796d652027a966f1da46a34b94e78",
 			DerivPath: []string{
@@ -246,39 +279,45 @@ func (s *Server) DualFund(c *gin.Context, req *dualFundReq) (*dualFundResp, erro
 			},
 		},
 	}
-	witComps0 := []witnessComp{
+	aInputPub := "18cd420713da2b5075f5282dc0ab8abd32e0ad0ec611ddc936d866e042973101"
+	bInputPub := "d1a80162ad4c529000196b1c44d8bcb07b045190779648a1441e31d086d2e71d"
+	gasInputPub := "d1a80162ad4c529000196b1c44d8bcb07b045190779648a1441e31d086d2e71d"
+	aQ, bQ, gasQ := uint64(1), uint64(1), uint64(1)
+	// DEBUG: ============
+	// Construct builtTx
+	aInputWit := []witnessComp{
 		witnessComp{
-			Keys: key0,
+			Keys: aInputKeys,
 			Sigs: nil,
-			Quorom: 1,
+			Quorom: aQ,
 			Type: "raw_tx_signature",
 		},
 		witnessComp{
-			Value: "18cd420713da2b5075f5282dc0ab8abd32e0ad0ec611ddc936d866e042973101",
+			Value: aInputPub,
 			Type: "data",
 		},
 	}
-	witComps1 := []witnessComp{
+	bInputWit := []witnessComp{
 		witnessComp{
-			Keys: key1,
+			Keys: bInputKeys,
 			Sigs: nil,
-			Quorom: 1,
+			Quorom: bQ,
 			Type: "raw_tx_signature",
 		},
 		witnessComp{
-			Value: "d1a80162ad4c529000196b1c44d8bcb07b045190779648a1441e31d086d2e71d",
+			Value: bInputPub,
 			Type: "data",
 		},
 	}
-	witComps2 := []witnessComp{
+	gasInputWit := []witnessComp{
 		witnessComp{
-			Keys: key2,
+			Keys: gasInputKeys,
 			Sigs: nil,
-			Quorom: 1,
+			Quorom: gasQ,
 			Type: "raw_tx_signature",
 		},
 		witnessComp{
-			Value: "d1a80162ad4c529000196b1c44d8bcb07b045190779648a1441e31d086d2e71d",
+			Value: gasInputPub,
 			Type: "data",
 		},
 	}
@@ -289,23 +328,35 @@ func (s *Server) DualFund(c *gin.Context, req *dualFundReq) (*dualFundResp, erro
 		SigningIns: []signingInType{
 			signingInType{
 				Position: 0,
-				WitnessComps: witComps0,
+				WitnessComps: aInputWit,
 			},
 			signingInType{
 				Position: 1,
-				WitnessComps: witComps1,
+				WitnessComps: bInputWit,
 			},
 			signingInType{
 				Position: 2,
-				WitnessComps: witComps2,
+				WitnessComps: gasInputWit,
 			},
 		},
 	}
+
+	// Estimate tx gas
+	estGasResp, gErr := s.EstTxGas(
+		&estTxGasReq{
+			TxTemp: tx,
+		},
+	)
+	if gErr != nil {
+		return nil, gErr
+	}
+	fmt.Printf("%+v", estGasResp)
+
+	// Sign tx
 	signReq := &signTxReq{
 		Password: "12345",
 		Tx: tx,
 	}
-
 	signResp, signErr := s.SignTx(signReq)
 	if !signResp.SignComplete {
 		return nil, fmt.Errorf("signing not complete")
@@ -418,6 +469,23 @@ func (s *Server) DualFundScript(aPub, bPub string) (string, error) {
 		return "", fmt.Errorf("It's not ok for type string")
 	}
 	return valueProg, nil
+}
+
+func (s *Server) EstTxGas(req *estTxGasReq) (*estTxGasResp, error) {
+	resp := &bytomResponse{
+		Data: &estTxGasResp{},
+	}
+	s.BytomRPCClient.Call(context.Background(), "/estimate-transaction-gas", &req, &resp)
+	if resp.Status != "success" {
+		return nil, fmt.Errorf(`got=%#v; Err=%#v`, resp.Status, resp.ErrorDetail)
+	}
+
+	vResp, ok := resp.Data.(*estTxGasResp)
+	if !ok {
+		return nil, fmt.Errorf("It's not ok for type *signTxResp")
+	}
+
+	return vResp, nil
 }
 
 func (s *Server) SignTx(req *signTxReq) (*signTxResp, error) {
