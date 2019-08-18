@@ -727,9 +727,9 @@ func (s *Server) BuildCommitmentTx(req *buildTxReq) (*buildTxResp, error) {
 // }
 
 func BuildTx(req *buildTxReq) (*buildTxResp, error) {
-	if b, err := json.Marshal(req); err == nil {
-		log.Println("received req:", string(b))
-	}
+	// if b, err := json.Marshal(req); err == nil {
+	// 	log.Println("received req:", string(b))
+	// }
 
 	txData := &btmTypes.TxData{Version: 1}
 	for _, input := range req.Inputs {
@@ -747,7 +747,6 @@ func BuildTx(req *buildTxReq) (*buildTxResp, error) {
 	tx := btmTypes.NewTx(*txData)
 	for i, input := range req.Inputs {
 		var args [][]byte
-		// log.Println("mark", input)
 		if input.Arguments != "" {
 			if err := json.Unmarshal([]byte(input.Arguments), &args); err != nil {
 				return nil, err
