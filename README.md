@@ -2,45 +2,51 @@
 
 A payment channel network daemon based on Bytom using Path Hashed Time Locked Contract (PHTLC) instead of Hashed Time Locked Contract (HTLC), which is robust against wormhole attack.
 
-## Introduction
+## Quick Start
 
-A payment channel is a two-party off-chain protocol, by which multiple micropayment can be performed between two given on-chain nodes instatntly. A payment channel network is a multi-party off-chain protocol to perform payment between any two on-chain nodes by utilizing multiple existing payment channels as long as there exists at least one path connecting the two nodes.
+### Build
 
-### Hashed Time Locked Contract (HTLC)
+```bash
+cd BytomLit
+make
+``` 
 
-Assume a collision-resistant hash function `H()` and the condition `R` is chosen uniformly.
-`HTLC (Alice, Bob, y, x, t)` is defined as:
-- If Bob produces the condition `R` such that `H(R) = y` before `t` days, Alice pays Bob `x` bitcoins.
-- If `t` days elapse, Alice gets back `x` bitcoins.
+### Run
 
-### Payment Channel Networks (PCNs)
+```bash
+# You can modify the config.json
+./node config.json
+```
 
-![](images/pcn.jpg)
+### Usage
 
-### Wormhole Attack in PCNs
+```bash
+curl -X POST 127.0.0.1:9000/<api> -d '<parameter>'
+```
 
-The wormhole attack in PCNs is first analyzed formally by [MMSK18](https://eprint.iacr.org/2018/472.pdf), in which the authors using a novel cryptographic primitive -- anonymous multi-hop locks (AMHLs) to address this problem.
+JSON-RPC API List
++ `dual-fund`
+  - String: fund_asset_id
+  - Integer: fund_amount
+  - String: peer_id
+  - String: peer_asset_id
+  - Integer peer_amount
++ `push`
+  - String: asset_id
+  - Integer: amount
+  - String: peer_id
++ `close`: No parameter
 
-![](images/wormhole_attack.png)
+## Demo
 
-## Path Hashed Time Locked Contract (PHTLC) Scheme
-
-Assume a collision-resistant hash function `H()` and the condition `R` is chosen uniformly.
-`PHTLC (Alice, Bob, y, x, t, m, U)` is defined as:
-
-- If Bob produces the condition `R` such that `H(R) = y` and also provides aggregated signatures on message `m` signed by all the users in `U` before `t` days, Alice pays Bob `x` bitcoins.
-- If `t` days elapse, Alice gets back `x` bitcoins.
-
-## How PHTLCs Protect PCNs
-
-For example, Alice wants to pay 10 bitcoins to Edward, through Bob, Carol and Dave. Each intermediary will charge 1 bitcoin as forwarding fee, so Alice need to start with 13 bitcoins. Here are the steps to perform a payment from Alice to Edward.
-
-1. Edward sends `y = H(R)` to Alice.
-2. Alice finds out the routing path `π: Alice -> Bob -> Carol -> Dave -> Edward` and embeds `π` into message `m`. Alice signs `π` and instead of adding a classical HTLC, she adding a PHTLC as `PHTLC_AB (Alice, Bob, y, 13, 8, m, {Bob, Carol, Dave, Edward})` to the channel between Alice and Bob and computes `σ_A = sig_A(π)`. Alice sends `σ_A` and `π` to Bob.
-3. Upon receiving `PHTLC_AB`, `σ_A` and `π`, Bob adds `PHTLC_BC (Bob, Carol, y, 12, 6, m, {Carol, Dave, Edward})` to the channel between Bob and Carol and computes `σ_AB = aggr(σ_A, sig_B(π))`. Bob sends `σ_AB` and `π` to Carol.
-4. Upon receiving `PHTLC_BC`, `σ_AB` and `π`, Carol adds `PHTLC_CD (Carol, Dave, y, 11, 4, m, {Dave, Edward})` to the channel between Carol and Dave  and computes `σ_ABC = aggr(σ_AB, sig_C(π))`. Carol sends `σ_ABC` and `π` to Dave.
-5. Upon receiving `PHTLC_CD`, `σ_ABC` and `π`, Dave adds `PHTLC_DE (Dave, Edward, y, 10, 2, m, {Edward})` to the channel between Dave and Edward and computes `σ_ABCD = aggr(σ_ABC, sig_D(π))`. Dave sends `σ_ABCD` and `π` to Edward.
-6. Upon receiving `PHTLC_DE`, `σ_ABCD` and `π`, Edward provides `R` and his signature on `m` to Dave and fulfills `PHTLC_DE`. Edward gets 10 bitcoins from Dave.
-7. Upon receiving `R`, Dave provides `R`, Edward's signature and his signature to Carol and fulfills `PHTLC_CD`. Dave gets 11 bitcoins from Carol.
-8. Upon receiving `R`, Carol provides `R`, Dave's signature, Edward's signature and her signature to Bob and fulfills `PHTLC_BC`. Carol gets 12 bitcoins from Bob.
-9. Upon receiving `R`, Dave provides `R`, Carol's signature, Dave's signature, Edward's signature and his signature to Alice and fulfills `PHTLC_AB`. Bob gets 13 bitcoins from Alice.
+```bash
+# Send dual-funding transaction to Bytom chain. The response is supposed to be
+# a tx id.
+curl -X POST 127.0.0.1:9000/dual-fund -d '{}'
+# Send several BTLs (a user-defined asset for test) to another address. The
+# response is supposed to be a signed raw transaction
+curl -X POST 127.0.0.1:9000/push -d '{}'
+# Send the close-channel transaction (latest signed raw transaction got from
+# "/push") to Bytom chain. The response is supposed to be a tx id.
+curl -X POST 127.0.0.1:9000/close -d '{"receipt":"0701000201b90101b6017423542dade2528182812b199eafedc8cb013f04dcf62ddae0c4ef207bfd4e8af08f0da2b982fdc7aab517de724be5e5eed1c49330826501c88a261ae9cb0edf808084fea6dee11101016b5a20343132656a747d98a40488fcd68670f6723abb1f29dfaba36a3b6af18c6360d420b7e5e40c0de6d4cd0048968f047f1ed05215e04e03b7ce22f92ade9ff0791c5d7424537a641b000000537a547a526bae547a547a526c7cad63240000007bcd9f697b7cae7cac00c0c5010440fd083f7923f88d5a3d427e6519d149573d34fcdbf18d583ecd26d5ac2dba198b2cd5a455140dea12746a80df80daf6312173941fe4d4d28aadeb72549f04140240f3fae7a1734cb144c75e5d370ffcf42c746ce9008d0121551751da06d0ebbb30d0886fbf0966b713572350afb10b537a4585252cc2065f9b8dcbd939e2f1c10c2018cd420713da2b5075f5282dc0ab8abd32e0ad0ec611ddc936d866e04297310120d1a80162ad4c529000196b1c44d8bcb07b045190779648a1441e31d086d2e71d0161015f409fa556dad4ab99f1cedf78656b9221231aa70f06cb531e4df068127598582effffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff8099c4d59901000116001472e49786aea9ae75a5ec4543259b6d10c2c4f57d6302400903027dc48f4352d08169be7cf7d44e6cf5e2f373d9f666bbd4729ee52c6751c69d52dc868992dae1900a814adf3fcbd41a87a64b4a9c677f93119cf7f59c0020d1a80162ad4c529000196b1c44d8bcb07b045190779648a1441e31d086d2e71d020140f08f0da2b982fdc7aab517de724be5e5eed1c49330826501c88a261ae9cb0edf808084fea6dee11101160014a796b852f5db234d4450f80260e5640faf3808ce00013effffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff80ece1d0990101160014a796b852f5db234d4450f80260e5640faf3808ce00"}'
+```
