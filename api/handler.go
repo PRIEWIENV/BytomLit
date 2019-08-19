@@ -61,9 +61,9 @@ type key struct {
 }
 
 type dualFundReq struct {
-	inputs 	[]inputType 	`json:"inputs"`
-	aPub 		string 				`json:"pubkey_a"`
-	bPub 		string 				`json:"pubkey_b"`
+	Inputs 	[]inputType 	`json:"inputs"`
+	APub 		string 				`json:"pubkey_a"`
+	BPub 		string 				`json:"pubkey_b"`
 }
 
 type pushReq struct {
@@ -152,40 +152,8 @@ type estTxGasResp struct {
 func (s *Server) DualFund(c *gin.Context, req *dualFundReq) (*dualFundResp, error) {
 	// DEBUG: only for test
 	// http://47.99.208.8/dashboard/transactions/a20cf80fb9e907826eb6f092ed5df3ec7bf94072ade273a76a272c9108af9129
-	// aPub := "b7e5e40c0de6d4cd0048968f047f1ed05215e04e03b7ce22f92ade9ff0791c5d"
-	// bPub := "343132656a747d98a40488fcd68670f6723abb1f29dfaba36a3b6af18c6360d4"
-	// sID1, sID2, sID3 := btmBc.Hash{}, btmBc.Hash{}, btmBc.Hash{}
-	// sID1.UnmarshalText([]byte("dcdd21f5775d8205519204a9e8380632ba6d255f5d9f83640f7f00fe0414c942"))
-	// sID2.UnmarshalText([]byte("dcdd21f5775d8205519204a9e8380632ba6d255f5d9f83640f7f00fe0414c942"))
-	// sID3.UnmarshalText([]byte("d9b60b8b3d1e3d249b0efaefddd50a2bcc846f5462a2903c228d3c39b6dfcdf3"))
-	// aInput := inputType{
-	// 	SourceID: sID1,
-	// 	SourcePos: 2,
-	// 	Program: "0014f077b8a83998adfa8df7c529e8643cfebce2dff8",
-	// 	AssetID: "f08f0da2b982fdc7aab517de724be5e5eed1c49330826501c88a261ae9cb0edf",
-	// 	Amount: 10000000000000000,
-	// }
-	// bInput := inputType{
-	// 	SourceID: sID2,
-	// 	SourcePos: 1,
-	// 	Program: "001472e49786aea9ae75a5ec4543259b6d10c2c4f57d",
-	// 	AssetID: "f08f0da2b982fdc7aab517de724be5e5eed1c49330826501c88a261ae9cb0edf",
-	// 	Amount: 10000000000000000,
-	// }
-	// gasInput := inputType{
-	// 	SourceID: sID3,
-	// 	SourcePos: 0,
-	// 	Program: "001472e49786aea9ae75a5ec4543259b6d10c2c4f57d",
-	// 	AssetID: "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
-	// 	Amount: 41250000000,
-	// }
-	// inputs := &[]inputType{
-	// 	aInput,
-	// 	bInput,
-	// 	gasInput,
-	// }
 	fmt.Printf("%+v\n%+v\n", c, req)
-	return s.DualFundRaw(&req.inputs, req.aPub, req.bPub)
+	return s.DualFundRaw(&req.Inputs, req.APub, req.BPub)
 }
 
 // DualFund makes the funding transaction and put it on Bytom chain
