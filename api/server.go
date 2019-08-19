@@ -200,12 +200,11 @@ func createHandleReqArg(fun handlerFun, context *gin.Context) (interface{}, erro
 		return nil, nil
 	}
 	argType := ft.In(1).Elem()
-
 	reqArg := reflect.New(argType).Interface()
 	if err := context.ShouldBindJSON(reqArg); err != nil {
 		return nil, errors.Wrap(err, "bind reqArg")
 	}
-
+	
 	b, err := json.Marshal(reqArg)
 	if err != nil {
 		return nil, errors.Wrap(err, "json marshal")

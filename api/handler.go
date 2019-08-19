@@ -61,17 +61,13 @@ type key struct {
 }
 
 type dualFundReq struct {
-	FundAssetID   string     `json:"fund_asset_id"`
-	FundAmount    uint64     `json:"fund_amount"`
-	PeerID        string     `json:"peer_id"`
-	PeerAssetID   string     `json:"peer_asset_id"`
-	PeerAmount    uint64     `json:"peer_amount"`
+	inputs 	[]inputType 	`json:"inputs"`
+	aPub 		string 				`json:"pubkey_a"`
+	bPub 		string 				`json:"pubkey_b"`
 }
 
 type pushReq struct {
-	AssetID   string     `json:"asset_id"`
 	Amount    uint64     `json:"amount"`
-	PeerID    string     `json:"peer_id"`
 }
 
 type compileArg struct {
@@ -95,7 +91,7 @@ type inputType struct {
 	SourcePos uint64     `json:"source_pos"`
 	AssetID   string     `json:"asset_id"`
 	Amount    uint64     `json:"amount"`
-	Arguments string     `json:"arguments"`
+	Arguments string     `json:"arguments,omitempty"`
 }
 
 type outputType struct {
@@ -156,39 +152,40 @@ type estTxGasResp struct {
 func (s *Server) DualFund(c *gin.Context, req *dualFundReq) (*dualFundResp, error) {
 	// DEBUG: only for test
 	// http://47.99.208.8/dashboard/transactions/a20cf80fb9e907826eb6f092ed5df3ec7bf94072ade273a76a272c9108af9129
-	aPub := "b7e5e40c0de6d4cd0048968f047f1ed05215e04e03b7ce22f92ade9ff0791c5d"
-	bPub := "343132656a747d98a40488fcd68670f6723abb1f29dfaba36a3b6af18c6360d4"
-	sID1, sID2, sID3 := btmBc.Hash{}, btmBc.Hash{}, btmBc.Hash{}
-	sID1.UnmarshalText([]byte("dcdd21f5775d8205519204a9e8380632ba6d255f5d9f83640f7f00fe0414c942"))
-	sID2.UnmarshalText([]byte("dcdd21f5775d8205519204a9e8380632ba6d255f5d9f83640f7f00fe0414c942"))
-	sID3.UnmarshalText([]byte("d9b60b8b3d1e3d249b0efaefddd50a2bcc846f5462a2903c228d3c39b6dfcdf3"))
-	aInput := inputType{
-		SourceID: sID1,
-		SourcePos: 2,
-		Program: "0014f077b8a83998adfa8df7c529e8643cfebce2dff8",
-		AssetID: "f08f0da2b982fdc7aab517de724be5e5eed1c49330826501c88a261ae9cb0edf",
-		Amount: 10000000000000000,
-	}
-	bInput := inputType{
-		SourceID: sID2,
-		SourcePos: 1,
-		Program: "001472e49786aea9ae75a5ec4543259b6d10c2c4f57d",
-		AssetID: "f08f0da2b982fdc7aab517de724be5e5eed1c49330826501c88a261ae9cb0edf",
-		Amount: 10000000000000000,
-	}
-	gasInput := inputType{
-		SourceID: sID3,
-		SourcePos: 0,
-		Program: "001472e49786aea9ae75a5ec4543259b6d10c2c4f57d",
-		AssetID: "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
-		Amount: 41250000000,
-	}
-	inputs := &[]inputType{
-		aInput,
-		bInput,
-		gasInput,
-	}
-	return s.DualFundRaw(inputs, aPub, bPub)
+	// aPub := "b7e5e40c0de6d4cd0048968f047f1ed05215e04e03b7ce22f92ade9ff0791c5d"
+	// bPub := "343132656a747d98a40488fcd68670f6723abb1f29dfaba36a3b6af18c6360d4"
+	// sID1, sID2, sID3 := btmBc.Hash{}, btmBc.Hash{}, btmBc.Hash{}
+	// sID1.UnmarshalText([]byte("dcdd21f5775d8205519204a9e8380632ba6d255f5d9f83640f7f00fe0414c942"))
+	// sID2.UnmarshalText([]byte("dcdd21f5775d8205519204a9e8380632ba6d255f5d9f83640f7f00fe0414c942"))
+	// sID3.UnmarshalText([]byte("d9b60b8b3d1e3d249b0efaefddd50a2bcc846f5462a2903c228d3c39b6dfcdf3"))
+	// aInput := inputType{
+	// 	SourceID: sID1,
+	// 	SourcePos: 2,
+	// 	Program: "0014f077b8a83998adfa8df7c529e8643cfebce2dff8",
+	// 	AssetID: "f08f0da2b982fdc7aab517de724be5e5eed1c49330826501c88a261ae9cb0edf",
+	// 	Amount: 10000000000000000,
+	// }
+	// bInput := inputType{
+	// 	SourceID: sID2,
+	// 	SourcePos: 1,
+	// 	Program: "001472e49786aea9ae75a5ec4543259b6d10c2c4f57d",
+	// 	AssetID: "f08f0da2b982fdc7aab517de724be5e5eed1c49330826501c88a261ae9cb0edf",
+	// 	Amount: 10000000000000000,
+	// }
+	// gasInput := inputType{
+	// 	SourceID: sID3,
+	// 	SourcePos: 0,
+	// 	Program: "001472e49786aea9ae75a5ec4543259b6d10c2c4f57d",
+	// 	AssetID: "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+	// 	Amount: 41250000000,
+	// }
+	// inputs := &[]inputType{
+	// 	aInput,
+	// 	bInput,
+	// 	gasInput,
+	// }
+	fmt.Printf("%+v\n%+v\n", c, req)
+	return s.DualFundRaw(&req.inputs, req.aPub, req.bPub)
 }
 
 // DualFund makes the funding transaction and put it on Bytom chain
@@ -206,19 +203,17 @@ func (s *Server) DualFundRaw(inputs *[]inputType, aPub string, bPub string) (*du
 	bInput := (*inputs)[1]
 	gasInput := (*inputs)[2]
 	// Build unsigned Tx
-	aOutput := outputType{
+	if aInput.AssetID != bInput.AssetID {
+		return nil, fmt.Errorf("different input AssetIDs")
+	}
+	fundOutput := outputType{
 		Program: prog,
 		AssetID: aInput.AssetID,
-		Amount: aInput.Amount,
-	}
-	bOutput := outputType{
-		Program: prog,
-		AssetID: bInput.AssetID,
-		Amount: bInput.Amount,
+		Amount: aInput.Amount + bInput.Amount,
 	}
 	gasOutput := outputType{
 		Program: "0014a796b852f5db234d4450f80260e5640faf3808ce",
-		AssetID: "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+		AssetID: gasInput.AssetID,
 		Amount: gasInput.Amount - estimatedGasFee,
 	}
 
@@ -229,8 +224,7 @@ func (s *Server) DualFundRaw(inputs *[]inputType, aPub string, bPub string) (*du
 			gasInput,
 		},
 		Outputs: []outputType{
-			aOutput,
-			bOutput,
+			fundOutput,
 			gasOutput,
 		},
 	}
@@ -403,7 +397,7 @@ func (s *Server) Push(c *gin.Context, req *pushReq) (*pushResp, error) {
 		SourcePos: 1,
 		Program: "5a20343132656a747d98a40488fcd68670f6723abb1f29dfaba36a3b6af18c6360d420b7e5e40c0de6d4cd0048968f047f1ed05215e04e03b7ce22f92ade9ff0791c5d7424537a641b000000537a547a526bae547a547a526c7cad63240000007bcd9f697b7cae7cac00c0",
 		AssetID: "f08f0da2b982fdc7aab517de724be5e5eed1c49330826501c88a261ae9cb0edf",
-		Amount: 10000000000000000,
+		Amount: 20000000000000000,
 	}
 	gasInput := inputType{
 		SourceID: gasSourceID,
@@ -415,18 +409,18 @@ func (s *Server) Push(c *gin.Context, req *pushReq) (*pushResp, error) {
 
 	// Build unsigned Tx
 	aOutput := outputType{
-		Program: "0014a796b852f5db234d4450f80260e5640faf3808ce",
+		Program: "0014f077b8a83998adfa8df7c529e8643cfebce2dff8",
 		AssetID: fundInput.AssetID,
-		Amount: fundInput.Amount,
+		Amount: fundInput.Amount - req.Amount,
 	}
-	// bOutput := outputType{
-	// 	Program: prog,
-	// 	AssetID: fundInput.AssetID,
-	// 	Amount: fundInput.Amount,
-	// }
+	bOutput := outputType{
+		Program: "001472e49786aea9ae75a5ec4543259b6d10c2c4f57d",
+		AssetID: fundInput.AssetID,
+		Amount: fundInput.Amount + req.Amount,
+	}
 	gasOutput := outputType{
 		Program: "0014a796b852f5db234d4450f80260e5640faf3808ce",
-		AssetID: "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+		AssetID: gasInput.AssetID,
 		Amount: gasInput.Amount - estimatedGasFee,
 	}
 
@@ -437,7 +431,7 @@ func (s *Server) Push(c *gin.Context, req *pushReq) (*pushResp, error) {
 		},
 		Outputs: []outputType{
 			aOutput,
-			// bOutput,
+			bOutput,
 			gasOutput,
 		},
 	}
