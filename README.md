@@ -1,6 +1,6 @@
 # An Anti-Wormhole Payment Channel Network on Bytom
 
-A payment channel network daemon based on Bytom using Path Hashed Time Locked Contract (PHTLC) instead of Hashed Time Locked Contract (HTLC), which is robust against wormhole attack.
+A payment channel network daemon based on Bytom using Path Hashed Time Locked Contract (BytomLit) instead of Hashed Time Locked Contract (HTLC), which is robust against wormhole attack.
 
 ## Quick Start
 

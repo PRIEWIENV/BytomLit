@@ -14,8 +14,8 @@ import (
 	"github.com/bytom/blockchain/rpc"
 	"github.com/bytom/api"
 	
-	"github.com/PRIEWIENV/PHTLC/config"
-	"github.com/PRIEWIENV/PHTLC/errors"
+	"github.com/PRIEWIENV/BytomLit/config"
+	"github.com/PRIEWIENV/BytomLit/errors"
 )
 
 type Server struct {

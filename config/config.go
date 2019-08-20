@@ -6,7 +6,7 @@ import (
 
 	log "github.com/sirupsen/logrus"
 
-	"github.com/PRIEWIENV/PHTLC/common"
+	"github.com/PRIEWIENV/BytomLit/common"
 )
 
 func NewConfig() *Config {

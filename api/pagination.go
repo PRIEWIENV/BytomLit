@@ -7,7 +7,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 
-	"github.com/PRIEWIENV/PHTLC/errors"
+	"github.com/PRIEWIENV/BytomLit/errors"
 )
 
 const (

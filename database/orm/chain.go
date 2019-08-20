@@ -1,7 +1,7 @@
 package orm
 
 import (
-	"github.com/PRIEWIENV/PHTLC/types"
+	"github.com/PRIEWIENV/BytomLit/types"
 )
 
 type Chain struct {
