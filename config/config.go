@@ -6,7 +6,7 @@ import (
 
 	log "github.com/sirupsen/logrus"
 
-	"github.com/PRIEWIENV/PHTLC/common"
+	"github.com/PRIEWIENV/BytomLit/common"
 )
 
 func NewConfig() *Config {
@@ -33,9 +33,10 @@ func NewConfigWithPath(path string) *Config {
 }
 
 type Config struct {
-	API         API                `json:"api"`
-	MySQLConfig common.MySQLConfig `json:"mysql"`
-	Mainchain   Chain              `json:"mainchain"`
+	API         API                	`json:"api"`
+	MySQLConfig common.MySQLConfig 	`json:"mysql"`
+	Mainchain   Chain              	`json:"mainchain"`
+	Wallet			Wallet							`json:"wallet"`
 }
 
 type API struct {
@@ -45,8 +46,12 @@ type API struct {
 
 type Chain struct {
 	Name          string `json:"name"`
-	Upstream      string `json:"upstream"`
-	RPCPort       uint64 `json:"rpc_port"`
 	SyncSeconds   uint64 `json:"sync_seconds"`
 	Confirmations uint64 `json:"confirmations"`
+}
+
+type Wallet struct {
+	RPC						string	`json:"rpc"`
+	AccessToken		string	`json:"access_token"`
+	Password 			string	`json:"password"`
 }

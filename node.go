@@ -3,8 +3,8 @@ package main
 import (
 	"sync"
 
-	"github.com/PRIEWIENV/PHTLC/api"
-	"github.com/PRIEWIENV/PHTLC/config"
+	"github.com/PRIEWIENV/BytomLit/api"
+	"github.com/PRIEWIENV/BytomLit/config"
 )
 
 func main() {

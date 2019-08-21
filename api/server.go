@@ -14,8 +14,8 @@ import (
 	"github.com/bytom/blockchain/rpc"
 	"github.com/bytom/api"
 	
-	"github.com/PRIEWIENV/PHTLC/config"
-	"github.com/PRIEWIENV/PHTLC/errors"
+	"github.com/PRIEWIENV/BytomLit/config"
+	"github.com/PRIEWIENV/BytomLit/errors"
 )
 
 type Server struct {
@@ -40,8 +40,8 @@ func NewServer(db *gorm.DB, cfg *config.Config) *Server {
 
 func (server *Server) initRPCClient() {
 	client := &rpc.Client{
-		BaseURL:     server.cfg.Mainchain.Upstream,
-		AccessToken: "test-user:test-secret",
+		BaseURL:     server.cfg.Wallet.RPC,
+		AccessToken: server.cfg.Wallet.AccessToken,
 	}
 	respTest := &api.Response{}
 	client.Call(context.Background(), "/gas-rate", nil, &respTest)

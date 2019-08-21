@@ -10,7 +10,6 @@ import (
 	btmBc "github.com/bytom/protocol/bc"
 	btmTypes "github.com/bytom/protocol/bc/types"
 	"github.com/bytom/crypto"
-	// "github.com/bytom/consensus/segwit"
 	"github.com/bytom/crypto/randentropy"
 	"github.com/gin-gonic/gin"
 )
@@ -115,32 +114,32 @@ type signTxResp struct {
 }
 
 type dualFundResp struct {
-  TxID string `json:"tx_id"`
+  TxID 			string 	`json:"tx_id"`
 }
 
 type pushResp struct {
-  Receipt string `json:"receipt"`
+  Receipt 	string 	`json:"receipt"`
 }
 
 type compileResp struct {
-	Program string `json:"program"`
+	Program 	string 	`json:"program"`
 }
 
 type closeChannelResp struct {
-	Status string `json:"status"`
+	Status 		string 	`json:"status"`
 }
 
 type submitTxResp struct {
-	TxID string `json:"tx_id"`
+	TxID 			string 	`json:"tx_id"`
 }
 
 type dualFundRawType struct {
 	OutputPub string
-	Input inputType
+	Input 		inputType
 }
 
 type estTxGasReq struct {
-	TxTemp builtTx `json:"transaction_template"`
+	TxTemp 		builtTx `json:"transaction_template"`
 }
 
 type estTxGasResp struct {
@@ -156,7 +155,7 @@ func (s *Server) DualFund(c *gin.Context, req *dualFundReq) (*dualFundResp, erro
 	return s.DualFundRaw(&req.Inputs, req.APub, req.BPub)
 }
 
-// DualFund makes the funding transaction and put it on Bytom chain
+// DualFundRaw makes the funding transaction and put it on Bytom chain
 func (s *Server) DualFundRaw(inputs *[]inputType, aPub string, bPub string) (*dualFundResp, error) {
 	resp := &dualFundResp{}
 	// Compile contract

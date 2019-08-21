@@ -1,7 +1,7 @@
 package api
 
 import (
-	"github.com/PRIEWIENV/PHTLC/errors"
+	"github.com/PRIEWIENV/BytomLit/errors"
 )
 
 var (

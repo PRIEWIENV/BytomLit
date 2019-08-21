@@ -19,11 +19,11 @@ if [ "$1" = "clean" ]; then
 fi
 
 # Create the homedir
-if [ ! -L "$homedir/PHTLC" ]; then
+if [ ! -L "$homedir/BytomLit" ]; then
     mkdir -p $homedir
     back=$(pwd)
     cd $homedir
-    ln -s ../../../../../. PHTLC
+    ln -s ../../../../../. BytomLit
     cd $back
 fi
 
@@ -32,8 +32,8 @@ GOPATH="$workspace"
 export GOPATH
 
 # Run the command inside the workspace.
-cd "$homedir/PHTLC"
-PWD="$homedir/PHTLC"
+cd "$homedir/BytomLit"
+PWD="$homedir/BytomLit"
 
 # Launch the arguments with the configured environment.
 if [ ! -z "$1" ]; then
