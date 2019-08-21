@@ -40,8 +40,8 @@ func NewServer(db *gorm.DB, cfg *config.Config) *Server {
 
 func (server *Server) initRPCClient() {
 	client := &rpc.Client{
-		BaseURL:     server.cfg.Mainchain.Upstream,
-		AccessToken: "test-user:test-secret",
+		BaseURL:     server.cfg.Wallet.RPC,
+		AccessToken: server.cfg.Wallet.AccessToken,
 	}
 	respTest := &api.Response{}
 	client.Call(context.Background(), "/gas-rate", nil, &respTest)

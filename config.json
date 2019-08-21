@@ -1,22 +1,29 @@
 {
-    "api" : {
-        "is_release_mode" : false,
-        "port" : 9000
+  "api" : {
+    "is_release_mode" : false,
+    "port" : 9000
+  },
+  "mysql" : {
+    "connection" : {
+        "host" : "127.0.0.1",
+        "port" : 3306,
+        "username" : "root",
+        "password" : "toor",
+        "database" : "bytom_lightning"
     },
-    "mysql" : {
-        "connection" : {
-            "host": "127.0.0.1",
-            "port": 3306,
-            "username": "root",
-            "password": "toor",
-            "database": "bytom_lightning"
-        },
-        "log_mode" : true
-    },
-    "mainchain" : {
-        "name" : "Bytom",
-        "upstream" : "http://47.99.208.8:9888",
-        "sync_seconds" : 5,
-        "confirmations" : 6
-    }
+    "log_mode" : true
+  },
+  "mainchain" : {
+    "name" : "Bytom",
+    "sync_seconds" : 5,
+    "confirmations" : 6
+  },
+  "wallet" : {
+    "rpc" : "http://47.99.208.8:9888",
+    "access_token" : "test-user:test-secret",
+    "password" : "12345"
+  },
+  "p2p" : {
+    "peer_addr" : ""
+  }
 }
