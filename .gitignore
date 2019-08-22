@@ -3,7 +3,8 @@ tools/__pycache__/
 tools/*.py[cod]
 tools/*$py.class
 
-build/_workspace/
+build/_workspace/bin
+build/_workspace/pkg
 
 node
 BytomLit
