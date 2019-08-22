@@ -1,4 +1,4 @@
-FROM golang:alpine as builder
+FROM golang:1.13rc1-alpine3.10 as builder
 
 MAINTAINER PRIEWIENV "PRIEWIENV@users.noreply.github.com"
 
@@ -10,7 +10,7 @@ ADD . $GOPATH/src/PRIEWIENV/BytomLit
 
 RUN make
 
-FROM alpine:latest as prod
+FROM alpine:3.10 as prod
 
 RUN apk --no-cache add ca-certificates
 
