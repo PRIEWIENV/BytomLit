@@ -1,0 +1,5 @@
+build/_workspace
+tools
+contracts
+node
+.git
