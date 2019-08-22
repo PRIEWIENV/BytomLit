@@ -12,7 +12,7 @@ import (
 	"time"
 
 	"github.com/davecgh/go-spew/spew"
-	net "github.com/libp2p/go-libp2p-net"
+	net "github.com/libp2p/go-libp2p-core/network"
 )
 
 func handleStream(s net.Stream) {

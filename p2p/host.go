@@ -10,8 +10,8 @@ import (
 	"sync"
 
 	libp2p "github.com/libp2p/go-libp2p"
-	crypto "github.com/libp2p/go-libp2p-crypto"
-	host "github.com/libp2p/go-libp2p-host"
+	crypto "github.com/libp2p/go-libp2p-core/crypto"
+	host "github.com/libp2p/go-libp2p-core/host"
 	ma "github.com/multiformats/go-multiaddr"
 )
 

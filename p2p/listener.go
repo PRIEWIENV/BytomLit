@@ -8,7 +8,7 @@ import (
 	"log"
 
 	golog "github.com/ipfs/go-log"
-	peer "github.com/libp2p/go-libp2p-peer"
+	peer "github.com/libp2p/go-libp2p-core/peer"
 	pstore "github.com/libp2p/go-libp2p-peerstore"
 	ma "github.com/multiformats/go-multiaddr"
 	gologging "github.com/whyrusleeping/go-logging"

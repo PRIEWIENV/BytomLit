@@ -46,6 +46,7 @@ type API struct {
 
 type Chain struct {
 	Name          string `json:"name"`
+	NetID					string `json:"net_id"`
 	SyncSeconds   uint64 `json:"sync_seconds"`
 	Confirmations uint64 `json:"confirmations"`
 }

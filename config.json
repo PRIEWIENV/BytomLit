@@ -15,6 +15,7 @@
   },
   "mainchain" : {
     "name" : "Bytom",
+    "net_id" : "wisdom",
     "sync_seconds" : 5,
     "confirmations" : 6
   },

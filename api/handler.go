@@ -9,8 +9,13 @@ import (
 
 	btmBc "github.com/bytom/protocol/bc"
 	btmTypes "github.com/bytom/protocol/bc/types"
+	"github.com/bytom/protocol/vm/vmutil"
+	btmCommon "github.com/bytom/common"
+	"github.com/bytom/consensus"
 	"github.com/bytom/crypto"
 	"github.com/bytom/crypto/randentropy"
+	"github.com/bytom/crypto/ed25519"
+	"github.com/bytom/crypto/ed25519/chainkd"
 	"github.com/gin-gonic/gin"
 )
 
@@ -60,13 +65,17 @@ type key struct {
 }
 
 type dualFundReq struct {
-	Inputs 	[]inputType 	`json:"inputs"`
-	APub 		string 				`json:"pubkey_a"`
-	BPub 		string 				`json:"pubkey_b"`
+	Inputs 		[]inputType 	`json:"inputs"`
+	InputKeys	[]key					`json:"input_keys"`
+	APub 			string 				`json:"pubkey_a"`
+	BPub 			string 				`json:"pubkey_b"`
 }
 
 type pushReq struct {
-	Amount    uint64     `json:"amount"`
+	Inputs 	[]inputType 	`json:"inputs"`
+	InputKeys	[]key					`json:"input_keys"`
+	APub 		string 				`json:"pubkey_a"`
+	BPub 		string 				`json:"pubkey_b"`
 }
 
 type compileArg struct {
@@ -152,11 +161,38 @@ func (s *Server) DualFund(c *gin.Context, req *dualFundReq) (*dualFundResp, erro
 	// DEBUG: only for test
 	// http://47.99.208.8/dashboard/transactions/a20cf80fb9e907826eb6f092ed5df3ec7bf94072ade273a76a272c9108af9129
 	fmt.Printf("%+v\n%+v\n", c, req)
-	return s.DualFundRaw(&req.Inputs, req.APub, req.BPub)
+	return s.DualFundRaw(&req.Inputs, &req.InputKeys, .APub, req.BPub)
+}
+
+type XPubDerivation struct {
+	Address					btmCommon.AddressWitnessPubKeyHash
+	Pubkey					ed25519.PublicKey
+	ControlProgram	[]byte
+}
+
+func (s *Server) XPubDerive(XPubs []chainkd.XPub, path [][]byte) (*XPubDerivation, error) {
+	derivedXPubs := chainkd.DeriveXPubs(XPubs, path)
+	derivedPK := derivedXPubs[0].PublicKey()
+	pubHash := crypto.Ripemd160(derivedPK)
+	address, err := btmCommon.NewAddressWitnessPubKeyHash(pubHash, &consensus.NetParams[s.cfg.Mainchain.NetID])
+	if err != nil {
+		return nil, err
+	}
+
+	control, err := vmutil.P2WPKHProgram([]byte(pubHash))
+	if err != nil {
+		return nil, err
+	}
+
+	return &XPubDerivation{
+		Address:        address.EncodeAddress(),
+		Pubkey: 				ed25519.PublicKey,
+		ControlProgram: control,
+	}, nil
 }
 
 // DualFundRaw makes the funding transaction and put it on Bytom chain
-func (s *Server) DualFundRaw(inputs *[]inputType, aPub string, bPub string) (*dualFundResp, error) {
+func (s *Server) DualFundRaw(inputs *[]inputType, inputKeys *[]key, aPub string, bPub string) (*dualFundResp, error) {
 	resp := &dualFundResp{}
 	// Compile contract
 	prog, err := s.DualFundScript(aPub, bPub)
@@ -203,55 +239,40 @@ func (s *Server) DualFundRaw(inputs *[]inputType, aPub string, bPub string) (*du
 	if mErr != nil {
 		return nil, mErr
 	}
-
-	// DEBUG
 	aInputKeys := []key{
-		key{
-			XPub: "e0446ee8c0f0d559d6eeaeddf5b676ff89de4cdd0477f69f2662269f5e4a6e43d7e6aefa9547408839bc6796f9d22e6865c796d652027a966f1da46a34b94e78",
-			DerivPath: []string{
-				"2c000000",
-				"99000000",
-				"01000000",
-				"00000000",
-				"02000000",
-			},
-		},
+		(*inputKeys)[0],
 	}
 	bInputKeys := []key{
-		key{
-			XPub: "e0446ee8c0f0d559d6eeaeddf5b676ff89de4cdd0477f69f2662269f5e4a6e43d7e6aefa9547408839bc6796f9d22e6865c796d652027a966f1da46a34b94e78",
-			DerivPath: []string{
-				"2c000000",
-				"99000000",
-				"01000000",
-				"00000000",
-				"01000000",
-			},
-		},
+		(*inputKeys)[1],
 	}
 	gasInputKeys := []key{
-		key{
-			XPub: "e0446ee8c0f0d559d6eeaeddf5b676ff89de4cdd0477f69f2662269f5e4a6e43d7e6aefa9547408839bc6796f9d22e6865c796d652027a966f1da46a34b94e78",
-			DerivPath: []string{
-				"2c000000",
-				"99000000",
-				"01000000",
-				"00000000",
-				"01000000",
-			},
-		},
+		(*inputKeys)[2],
 	}
-	aInputPub := "18cd420713da2b5075f5282dc0ab8abd32e0ad0ec611ddc936d866e042973101"
-	bInputPub := "d1a80162ad4c529000196b1c44d8bcb07b045190779648a1441e31d086d2e71d"
-	gasInputPub := "d1a80162ad4c529000196b1c44d8bcb07b045190779648a1441e31d086d2e71d"
-	aQ, bQ, gasQ := uint64(1), uint64(1), uint64(1)
-	// DEBUG: ============
+
+	var derives []XPubDerivation
+
+	for i, v := range {aInputKeys, bInputkeys, gasInputs} {
+		pathBytes := [][]byte
+		for j, v := range aInputKeys[0].DerivPath {
+			pathBytes[i] = hex.DecodeString(v)
+		}
+	
+		deriv, err := s.XPubDerive(hex.DecodeString(aInputKeys[0].XPub),pathBytes)
+		if err != nil {
+			return nil, adErr
+		}
+		derives[i] = deriv
+	}
+
+	aInputPub := hex.EncodeToString(derives[0].Pubkey)
+	bInputPub := hex.EncodeToString(derives[1].Pubkey)
+	gasInputPub := hex.EncodeToString(derives[2].Pubkey)
 	// Construct builtTx
 	aInputWit := []witnessComp{
 		witnessComp{
 			Keys: aInputKeys,
 			Sigs: nil,
-			Quorom: aQ,
+			Quorom: uint64(1),
 			Type: "raw_tx_signature",
 		},
 		witnessComp{
@@ -263,7 +284,7 @@ func (s *Server) DualFundRaw(inputs *[]inputType, aPub string, bPub string) (*du
 		witnessComp{
 			Keys: bInputKeys,
 			Sigs: nil,
-			Quorom: bQ,
+			Quorom: uint64(1),
 			Type: "raw_tx_signature",
 		},
 		witnessComp{
@@ -275,7 +296,7 @@ func (s *Server) DualFundRaw(inputs *[]inputType, aPub string, bPub string) (*du
 		witnessComp{
 			Keys: gasInputKeys,
 			Sigs: nil,
-			Quorom: gasQ,
+			Quorom: uint64(1),
 			Type: "raw_tx_signature",
 		},
 		witnessComp{
@@ -342,11 +363,13 @@ func (s *Server) DualFundRaw(inputs *[]inputType, aPub string, bPub string) (*du
 
 // Push makes a payment to the peer
 func (s *Server) Push(c *gin.Context, req *pushReq) (*pushResp, error) {
+	return s.PushRaw(&req.Inputs, &req.InputKeys, req.APub, req.BPub)
+}
+
+func (s *Server) PushRaw(inputs *[]inputType, inputKeys *[]key, aPub string, bPub string) (*pushResp, error) {
 	resp := &pushResp{
 		Receipt: "success",
 	}
-	aPub := "b7e5e40c0de6d4cd0048968f047f1ed05215e04e03b7ce22f92ade9ff0791c5d"
-	bPub := "343132656a747d98a40488fcd68670f6723abb1f29dfaba36a3b6af18c6360d4"
 	secret := randentropy.GetEntropyCSPRNG(32)
 	secretSha256 := crypto.Sha256(secret)
 	prog, err := s.CommitScript(aPub, bPub, hex.EncodeToString(secretSha256))
@@ -356,23 +379,8 @@ func (s *Server) Push(c *gin.Context, req *pushReq) (*pushResp, error) {
 	log.Println(prog)
 
 	estimatedGasFee := uint64(10000000)
-	fundSourceID, gasSourceID := btmBc.Hash{}, btmBc.Hash{}
-	fundSourceID.UnmarshalText([]byte("7423542dade2528182812b199eafedc8cb013f04dcf62ddae0c4ef207bfd4e8a"))
-	gasSourceID.UnmarshalText([]byte("409fa556dad4ab99f1cedf78656b9221231aa70f06cb531e4df068127598582e"))
-	fundInput := inputType{
-		SourceID: fundSourceID,
-		SourcePos: 1,
-		Program: "5a20343132656a747d98a40488fcd68670f6723abb1f29dfaba36a3b6af18c6360d420b7e5e40c0de6d4cd0048968f047f1ed05215e04e03b7ce22f92ade9ff0791c5d7424537a641b000000537a547a526bae547a547a526c7cad63240000007bcd9f697b7cae7cac00c0",
-		AssetID: "f08f0da2b982fdc7aab517de724be5e5eed1c49330826501c88a261ae9cb0edf",
-		Amount: 20000000000000000,
-	}
-	gasInput := inputType{
-		SourceID: gasSourceID,
-		SourcePos: 0,
-		Program: "001472e49786aea9ae75a5ec4543259b6d10c2c4f57d",
-		AssetID: "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
-		Amount: 41250000000,
-	}
+	fundInput := inputs[0]
+	gasInput := Inputs[1]
 
 	// Build unsigned Tx
 	aOutput := outputType{
@@ -412,51 +420,33 @@ func (s *Server) Push(c *gin.Context, req *pushReq) (*pushResp, error) {
 	}
 
 	// DEBUG
-	fundInputKeys := []key{
-		key{
-			XPub: "e0446ee8c0f0d559d6eeaeddf5b676ff89de4cdd0477f69f2662269f5e4a6e43d7e6aefa9547408839bc6796f9d22e6865c796d652027a966f1da46a34b94e78",
-			DerivPath: []string{
-				"2c000000",
-				"99000000",
-				"01000000",
-				"00000000",
-				"02000000",
-			},
-		},
-		key{
-			XPub: "e0446ee8c0f0d559d6eeaeddf5b676ff89de4cdd0477f69f2662269f5e4a6e43d7e6aefa9547408839bc6796f9d22e6865c796d652027a966f1da46a34b94e78",
-			DerivPath: []string{
-				"2c000000",
-				"99000000",
-				"01000000",
-				"00000000",
-				"01000000",
-			},
-		},
-	}
+	fundInputKeys := inputKeys[0:1]
 	gasInputKeys := []key{
-		key{
-			XPub: "e0446ee8c0f0d559d6eeaeddf5b676ff89de4cdd0477f69f2662269f5e4a6e43d7e6aefa9547408839bc6796f9d22e6865c796d652027a966f1da46a34b94e78",
-			DerivPath: []string{
-				"2c000000",
-				"99000000",
-				"01000000",
-				"00000000",
-				"01000000",
-			},
-		},
+		inputKeys[2],
 	}
-	aInputPub := "18cd420713da2b5075f5282dc0ab8abd32e0ad0ec611ddc936d866e042973101"
-	bInputPub := "d1a80162ad4c529000196b1c44d8bcb07b045190779648a1441e31d086d2e71d"
-	gasInputPub := "d1a80162ad4c529000196b1c44d8bcb07b045190779648a1441e31d086d2e71d"
-	fQ, gasQ := uint64(2), uint64(1)
+	for k, v := range fundInputKeys[0].
+	aDeriv, adErr := s.XPubDerive()
+	if adErr != nil {
+		return nil, adErr
+	}
+	bDeriv, bdErr := s.XPubDerive()
+	if bdErr != nil {
+		return nil, bdErr
+	}
+	gDeriv, gdErr := s.XPubDerive()
+	if gdErr != nil {
+		return nil, gdErr
+	}
+	aInputPub := hex.EncodeToString(aDeriv.Pubkey)
+	bInputPub := hex.EncodeToString(bDeriv.Pubkey)
+	gasInputPub := hex.EncodeToString(gDeriv.Pubkey)
 	// DEBUG: ============
 	// Construct builtTx
 	fundInputWit := []witnessComp{
 		witnessComp{
 			Keys: fundInputKeys,
 			Sigs: nil,
-			Quorom: fQ,
+			Quorom: uint64(2),
 			Type: "raw_tx_signature",
 		},
 		witnessComp{
@@ -472,7 +462,7 @@ func (s *Server) Push(c *gin.Context, req *pushReq) (*pushResp, error) {
 		witnessComp{
 			Keys: gasInputKeys,
 			Sigs: nil,
-			Quorom: gasQ,
+			Quorom: uint64(1),
 			Type: "raw_tx_signature",
 		},
 		witnessComp{
@@ -508,7 +498,7 @@ func (s *Server) Push(c *gin.Context, req *pushReq) (*pushResp, error) {
 
 	// Sign tx
 	signReq := &signTxReq{
-		Password: "12345",
+		Password: s.cfg.Wallet.Password,
 		Tx: tx,
 	}
 	signResp, signErr := s.SignTx(signReq)
@@ -516,7 +506,7 @@ func (s *Server) Push(c *gin.Context, req *pushReq) (*pushResp, error) {
 		return nil, signErr
 	}
 	signReq2 := &signTxReq{
-		Password: "12345",
+		Password: s.cfg.Wallet.Password,
 		Tx: signResp.Tx,
 	}
 	signResp2, signErr2 := s.SignTx(signReq2)
