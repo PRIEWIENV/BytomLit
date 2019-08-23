@@ -76,6 +76,7 @@ type pushReq struct {
 	InputKeys	[]key					`json:"input_keys"`
 	APub 		string 				`json:"pubkey_a"`
 	BPub 		string 				`json:"pubkey_b"`
+	Amount	uint64				`json:"amount"`
 }
 
 type compileArg struct {
@@ -161,20 +162,30 @@ func (s *Server) DualFund(c *gin.Context, req *dualFundReq) (*dualFundResp, erro
 	// DEBUG: only for test
 	// http://47.99.208.8/dashboard/transactions/a20cf80fb9e907826eb6f092ed5df3ec7bf94072ade273a76a272c9108af9129
 	fmt.Printf("%+v\n%+v\n", c, req)
-	return s.DualFundRaw(&req.Inputs, &req.InputKeys, .APub, req.BPub)
+	return s.DualFundRaw(&req.Inputs, &req.InputKeys, req.APub, req.BPub)
 }
 
 type XPubDerivation struct {
-	Address					btmCommon.AddressWitnessPubKeyHash
+	Address					string
 	Pubkey					ed25519.PublicKey
 	ControlProgram	[]byte
+}
+
+func XPub(obj []byte) (chainkd.XPub, error) {
+	var rs chainkd.XPub
+	if len(obj) != 64 {
+		return rs, fmt.Errorf("invalid length")
+	}
+	copy(rs[:], obj[:64])
+	return rs, nil
 }
 
 func (s *Server) XPubDerive(XPubs []chainkd.XPub, path [][]byte) (*XPubDerivation, error) {
 	derivedXPubs := chainkd.DeriveXPubs(XPubs, path)
 	derivedPK := derivedXPubs[0].PublicKey()
 	pubHash := crypto.Ripemd160(derivedPK)
-	address, err := btmCommon.NewAddressWitnessPubKeyHash(pubHash, &consensus.NetParams[s.cfg.Mainchain.NetID])
+	currentParam := consensus.NetParams[s.cfg.Mainchain.NetID]
+	address, err := btmCommon.NewAddressWitnessPubKeyHash(pubHash, &currentParam)
 	if err != nil {
 		return nil, err
 	}
@@ -185,8 +196,8 @@ func (s *Server) XPubDerive(XPubs []chainkd.XPub, path [][]byte) (*XPubDerivatio
 	}
 
 	return &XPubDerivation{
-		Address:        address.EncodeAddress(),
-		Pubkey: 				ed25519.PublicKey,
+		Address: address.EncodeAddress(),
+		Pubkey: derivedPK,
 		ControlProgram: control,
 	}, nil
 }
@@ -239,89 +250,59 @@ func (s *Server) DualFundRaw(inputs *[]inputType, inputKeys *[]key, aPub string,
 	if mErr != nil {
 		return nil, mErr
 	}
-	aInputKeys := []key{
-		(*inputKeys)[0],
-	}
-	bInputKeys := []key{
-		(*inputKeys)[1],
-	}
-	gasInputKeys := []key{
-		(*inputKeys)[2],
+
+	if len(*inputKeys) != 3 {
+		return nil, fmt.Errorf("invalid inputKeys length, suuposed to be 3")
 	}
 
-	var derives []XPubDerivation
-
-	for i, v := range {aInputKeys, bInputkeys, gasInputs} {
-		pathBytes := [][]byte
-		for j, v := range aInputKeys[0].DerivPath {
-			pathBytes[i] = hex.DecodeString(v)
-		}
-	
-		deriv, err := s.XPubDerive(hex.DecodeString(aInputKeys[0].XPub),pathBytes)
-		if err != nil {
-			return nil, adErr
-		}
-		derives[i] = deriv
-	}
-
-	aInputPub := hex.EncodeToString(derives[0].Pubkey)
-	bInputPub := hex.EncodeToString(derives[1].Pubkey)
-	gasInputPub := hex.EncodeToString(derives[2].Pubkey)
 	// Construct builtTx
-	aInputWit := []witnessComp{
-		witnessComp{
-			Keys: aInputKeys,
-			Sigs: nil,
-			Quorom: uint64(1),
-			Type: "raw_tx_signature",
-		},
-		witnessComp{
-			Value: aInputPub,
-			Type: "data",
-		},
-	}
-	bInputWit := []witnessComp{
-		witnessComp{
-			Keys: bInputKeys,
-			Sigs: nil,
-			Quorom: uint64(1),
-			Type: "raw_tx_signature",
-		},
-		witnessComp{
-			Value: bInputPub,
-			Type: "data",
-		},
-	}
-	gasInputWit := []witnessComp{
-		witnessComp{
-			Keys: gasInputKeys,
-			Sigs: nil,
-			Quorom: uint64(1),
-			Type: "raw_tx_signature",
-		},
-		witnessComp{
-			Value: gasInputPub,
-			Type: "data",
-		},
+	var signIns []signingInType
+	for i, k := range *inputKeys {
+		var pathBytes [][]byte
+		for j, str := range k.DerivPath {
+			pathBytes[j], err = hex.DecodeString(str)
+			if err != nil {
+				return nil, err
+			}
+		}
+		
+		xpubByte, e := hex.DecodeString(k.XPub)
+		if e != nil{
+			return nil, e
+		}
+		xpub, er := XPub(xpubByte)
+		if er != nil{
+			return nil, er
+		}
+		xpubs := []chainkd.XPub{xpub}
+		deriv, err := s.XPubDerive(xpubs, pathBytes)
+		if err != nil {
+			return nil, err
+		}
+
+		inputPub := hex.EncodeToString(deriv.Pubkey)
+		inputWit := []witnessComp{
+			witnessComp{
+				Keys: []key{k},
+				Sigs: nil,
+				Quorom: uint64(1),
+				Type: "raw_tx_signature",
+			},
+			witnessComp{
+				Value: inputPub,
+				Type: "data",
+			},
+		}
+		signIns = append(signIns, signingInType{
+			Position: uint64(i),
+			WitnessComps: inputWit,
+		})
 	}
 	tx := builtTx{
 		AllowAdditionalActions: false,
 		Local: true,
 		RawTx: string(rawTxBytes),
-		SigningIns: []signingInType{
-			signingInType{
-				Position: 0,
-				WitnessComps: aInputWit,
-			},
-			signingInType{
-				Position: 1,
-				WitnessComps: bInputWit,
-			},
-			signingInType{
-				Position: 2,
-				WitnessComps: gasInputWit,
-			},
-		},
+		SigningIns: signIns,
 	}
 
 	// Estimate tx gas
@@ -363,10 +344,10 @@ func (s *Server) DualFundRaw(inputs *[]inputType, inputKeys *[]key, aPub string,
 
 // Push makes a payment to the peer
 func (s *Server) Push(c *gin.Context, req *pushReq) (*pushResp, error) {
-	return s.PushRaw(&req.Inputs, &req.InputKeys, req.APub, req.BPub)
+	return s.PushRaw(&req.Inputs, &req.InputKeys, req.APub, req.BPub, req.Amount)
 }
 
-func (s *Server) PushRaw(inputs *[]inputType, inputKeys *[]key, aPub string, bPub string) (*pushResp, error) {
+func (s *Server) PushRaw(inputs *[]inputType, inputKeys *[]key, aPub string, bPub string, amount uint64) (*pushResp, error) {
 	resp := &pushResp{
 		Receipt: "success",
 	}
@@ -379,19 +360,19 @@ func (s *Server) PushRaw(inputs *[]inputType, inputKeys *[]key, aPub string, bPu
 	log.Println(prog)
 
 	estimatedGasFee := uint64(10000000)
-	fundInput := inputs[0]
-	gasInput := Inputs[1]
+	fundInput := (*inputs)[0]
+	gasInput := (*inputs)[1]
 
 	// Build unsigned Tx
 	aOutput := outputType{
 		Program: "0014f077b8a83998adfa8df7c529e8643cfebce2dff8",
 		AssetID: fundInput.AssetID,
-		Amount: fundInput.Amount - req.Amount,
+		Amount: fundInput.Amount - amount,
 	}
 	bOutput := outputType{
 		Program: "001472e49786aea9ae75a5ec4543259b6d10c2c4f57d",
 		AssetID: fundInput.AssetID,
-		Amount: fundInput.Amount + req.Amount,
+		Amount: fundInput.Amount + amount,
 	}
 	gasOutput := outputType{
 		Program: "0014a796b852f5db234d4450f80260e5640faf3808ce",
@@ -419,29 +400,34 @@ func (s *Server) PushRaw(inputs *[]inputType, inputKeys *[]key, aPub string, bPu
 		return nil, mErr
 	}
 
-	// DEBUG
-	fundInputKeys := inputKeys[0:1]
-	gasInputKeys := []key{
-		inputKeys[2],
+	var inputPubs []string
+	for _, key := range *inputKeys {
+		var pathBytes [][]byte
+		for j, str := range key.DerivPath {
+			pathBytes[j], err = hex.DecodeString(str)
+			if err != nil {
+				return nil, err
+			}
+		}
+		xpubByte, e := hex.DecodeString(key.XPub)
+		if e != nil{
+			return nil, e
+		}
+		xpub, er := XPub(xpubByte)
+		if er != nil{
+			return nil, er
+		}
+		xpubs := []chainkd.XPub{xpub}
+		deriv, err := s.XPubDerive(xpubs, pathBytes)
+		if err != nil {
+			return nil, err
+		}
+
+		inputPubs = append(inputPubs, hex.EncodeToString(deriv.Pubkey))
 	}
-	for k, v := range fundInputKeys[0].
-	aDeriv, adErr := s.XPubDerive()
-	if adErr != nil {
-		return nil, adErr
-	}
-	bDeriv, bdErr := s.XPubDerive()
-	if bdErr != nil {
-		return nil, bdErr
-	}
-	gDeriv, gdErr := s.XPubDerive()
-	if gdErr != nil {
-		return nil, gdErr
-	}
-	aInputPub := hex.EncodeToString(aDeriv.Pubkey)
-	bInputPub := hex.EncodeToString(bDeriv.Pubkey)
-	gasInputPub := hex.EncodeToString(gDeriv.Pubkey)
-	// DEBUG: ============
-	// Construct builtTx
+	fundInputKeys := (*inputKeys)[0:1]
+	gasInputKeys := []key{(*inputKeys)[2]}
+
 	fundInputWit := []witnessComp{
 		witnessComp{
 			Keys: fundInputKeys,
@@ -450,11 +436,11 @@ func (s *Server) PushRaw(inputs *[]inputType, inputKeys *[]key, aPub string, bPu
 			Type: "raw_tx_signature",
 		},
 		witnessComp{
-			Value: aInputPub,
+			Value: inputPubs[0],
 			Type: "data",
 		},
 		witnessComp{
-			Value: bInputPub,
+			Value: inputPubs[1],
 			Type: "data",
 		},
 	}
@@ -466,7 +452,7 @@ func (s *Server) PushRaw(inputs *[]inputType, inputKeys *[]key, aPub string, bPu
 			Type: "raw_tx_signature",
 		},
 		witnessComp{
-			Value: gasInputPub,
+			Value: inputPubs[2],
 			Type: "data",
 		},
 	}
