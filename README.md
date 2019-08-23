@@ -69,72 +69,66 @@ curl -X POST 127.0.0.1:9000/dual-fund -d '{
       "amount": 41250000000
     }
   ],
+	"input_keys": [
+		{
+			XPub: "e0446ee8c0f0d559d6eeaeddf5b676ff89de4cdd0477f69f2662269f5e4a6e43d7e6aefa9547408839bc6796f9d22e6865c796d652027a966f1da46a34b94e78",
+			DerivPath: [
+				"2c000000",
+				"99000000",
+				"01000000",
+				"00000000",
+				"02000000"
+			]
+		},{
+			XPub: "e0446ee8c0f0d559d6eeaeddf5b676ff89de4cdd0477f69f2662269f5e4a6e43d7e6aefa9547408839bc6796f9d22e6865c796d652027a966f1da46a34b94e78",
+	 		DerivPath: [
+	 			"2c000000",
+	 			"99000000",
+	 			"01000000",
+	 			"00000000",
+	 			"01000000"
+	 		]
+	 	},{
+	 		XPub: "e0446ee8c0f0d559d6eeaeddf5b676ff89de4cdd0477f69f2662269f5e4a6e43d7e6aefa9547408839bc6796f9d22e6865c796d652027a966f1da46a34b94e78",
+	 		DerivPath: [
+	 			"2c000000",
+	 			"99000000",
+	 			"01000000",
+	 			"00000000",
+	 			"01000000"
+			]
+	 	}
+	],
   "pubkey_a": "b7e5e40c0de6d4cd0048968f047f1ed05215e04e03b7ce22f92ade9ff0791c5d",
-  "pubkey_b": "343132656a747d98a40488fcd68670f6723abb1f29dfaba36a3b6af18c6360d4"
+  "pubkey_b": "343132656a747d98a40488fcd68670f6723abb1f29dfaba36a3b6af18c6360d4",
+	"output_program": "0014a796b852f5db234d4450f80260e5640faf3808ce"
 }'
-
-	// DEBUG
-	// aInputKeys := []key{
-	// 	key{
-	// 		XPub: "e0446ee8c0f0d559d6eeaeddf5b676ff89de4cdd0477f69f2662269f5e4a6e43d7e6aefa9547408839bc6796f9d22e6865c796d652027a966f1da46a34b94e78",
-	// 		DerivPath: []string{
-	// 			"2c000000",
-	// 			"99000000",
-	// 			"01000000",
-	// 			"00000000",
-	// 			"02000000",
-	// 		},
-	// 	},
-	// }
-	// bInputKeys := []key{
-	// 	key{
-	// 		XPub: "e0446ee8c0f0d559d6eeaeddf5b676ff89de4cdd0477f69f2662269f5e4a6e43d7e6aefa9547408839bc6796f9d22e6865c796d652027a966f1da46a34b94e78",
-	// 		DerivPath: []string{
-	// 			"2c000000",
-	// 			"99000000",
-	// 			"01000000",
-	// 			"00000000",
-	// 			"01000000",
-	// 		},
-	// 	},
-	// }
-	// gasInputKeys := []key{
-	// 	key{
-	// 		XPub: "e0446ee8c0f0d559d6eeaeddf5b676ff89de4cdd0477f69f2662269f5e4a6e43d7e6aefa9547408839bc6796f9d22e6865c796d652027a966f1da46a34b94e78",
-	// 		DerivPath: []string{
-	// 			"2c000000",
-	// 			"99000000",
-	// 			"01000000",
-	// 			"00000000",
-	// 			"01000000",
-	// 		},
-	// 	},
-	// }
-	// DEBUG: ============
 
 # Send several BTLs (a user-defined asset for test) to another address. The
 # response is supposed to be a signed raw transaction
-curl -X POST 127.0.0.1:9000/push -d '{"amount": 0}'
-
-aPub := "b7e5e40c0de6d4cd0048968f047f1ed05215e04e03b7ce22f92ade9ff0791c5d"
-bPub := "343132656a747d98a40488fcd68670f6723abb1f29dfaba36a3b6af18c6360d4"
-fundSourceID, gasSourceID := btmBc.Hash{}, btmBc.Hash{}
-fundSourceID.UnmarshalText([]byte("7423542dade2528182812b199eafedc8cb013f04dcf62ddae0c4ef207bfd4e8a"))
-gasSourceID.UnmarshalText([]byte("409fa556dad4ab99f1cedf78656b9221231aa70f06cb531e4df068127598582e"))
-fundInput := inputType{
-	SourceID: fundSourceID,
+curl -X POST 127.0.0.1:9000/push -d '{
+	"inputs":[
+		{
+	SourceID: "7423542dade2528182812b199eafedc8cb013f04dcf62ddae0c4ef207bfd4e8a",
 	SourcePos: 1,
 	Program: "5a20343132656a747d98a40488fcd68670f6723abb1f29dfaba36a3b6af18c6360d420b7e5e40c0de6d4cd0048968f047f1ed05215e04e03b7ce22f92ade9ff0791c5d7424537a641b000000537a547a526bae547a547a526c7cad63240000007bcd9f697b7cae7cac00c0",
 	AssetID: "f08f0da2b982fdc7aab517de724be5e5eed1c49330826501c88a261ae9cb0edf",
 	Amount: 20000000000000000,
-}
-gasInput := inputType{
-	SourceID: gasSourceID,
+},{
+	SourceID: "409fa556dad4ab99f1cedf78656b9221231aa70f06cb531e4df068127598582e",
 	SourcePos: 0,
 	Program: "001472e49786aea9ae75a5ec4543259b6d10c2c4f57d",
 	AssetID: "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
 	Amount: 41250000000,
 }
+	],
+	"input_keys": [
+		
+	]
+	"pubkey_a": "b7e5e40c0de6d4cd0048968f047f1ed05215e04e03b7ce22f92ade9ff0791c5d",
+	"pubkey_b": "343132656a747d98a40488fcd68670f6723abb1f29dfaba36a3b6af18c6360d4",
+	"output_program: """
+	"amount": 0}'
 
 # Send the close-channel transaction (latest signed raw transaction got from
 # "/push") to Bytom chain. The response is supposed to be a tx id.

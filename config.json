@@ -22,7 +22,8 @@
   "wallet" : {
     "rpc" : "http://47.99.208.8:9888",
     "access_token" : "test-user:test-secret",
-    "password" : "12345"
+    "password" : "12345",
+    "asset_id" : ""
   },
   "p2p" : {
     "peer_addr" : ""

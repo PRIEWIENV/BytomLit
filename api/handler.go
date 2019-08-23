@@ -69,14 +69,16 @@ type dualFundReq struct {
 	InputKeys	[]key					`json:"input_keys"`
 	APub 			string 				`json:"pubkey_a"`
 	BPub 			string 				`json:"pubkey_b"`
+	OutProg		string				`json:"output_program"`
 }
 
 type pushReq struct {
-	Inputs 	[]inputType 	`json:"inputs"`
+	Inputs 		[]inputType 	`json:"inputs"`
 	InputKeys	[]key					`json:"input_keys"`
-	APub 		string 				`json:"pubkey_a"`
-	BPub 		string 				`json:"pubkey_b"`
-	Amount	uint64				`json:"amount"`
+	APub 			string 				`json:"pubkey_a"`
+	BPub 			string 				`json:"pubkey_b"`
+	OutProgs	[]string			`json:"output_programs"`
+	Amount		uint64				`json:"amount"`
 }
 
 type compileArg struct {
@@ -158,13 +160,6 @@ type estTxGasResp struct {
 	VMNeu 			uint64	`json:"vm_neu"`
 }
 
-func (s *Server) DualFund(c *gin.Context, req *dualFundReq) (*dualFundResp, error) {
-	// DEBUG: only for test
-	// http://47.99.208.8/dashboard/transactions/a20cf80fb9e907826eb6f092ed5df3ec7bf94072ade273a76a272c9108af9129
-	fmt.Printf("%+v\n%+v\n", c, req)
-	return s.DualFundRaw(&req.Inputs, &req.InputKeys, req.APub, req.BPub)
-}
-
 type XPubDerivation struct {
 	Address					string
 	Pubkey					ed25519.PublicKey
@@ -202,8 +197,21 @@ func (s *Server) XPubDerive(XPubs []chainkd.XPub, path [][]byte) (*XPubDerivatio
 	}, nil
 }
 
+func (s *Server) DualFund(c *gin.Context, req *dualFundReq) (*dualFundResp, error) {
+	// DEBUG: only for test
+	// http://47.99.208.8/dashboard/transactions/a20cf80fb9e907826eb6f092ed5df3ec7bf94072ade273a76a272c9108af9129
+	fmt.Printf("%+v\n%+v\n", c, req)
+	return s.DualFundRaw(&req.Inputs, &req.InputKeys, req.APub, req.BPub, req.OutProg)
+}
+
 // DualFundRaw makes the funding transaction and put it on Bytom chain
-func (s *Server) DualFundRaw(inputs *[]inputType, inputKeys *[]key, aPub string, bPub string) (*dualFundResp, error) {
+func (s *Server) DualFundRaw(
+	inputs		*[]inputType,
+	inputKeys	*[]key,
+	aPub 			string,
+	bPub			string,
+	outProg 	string,
+) (*dualFundResp, error) {
 	resp := &dualFundResp{}
 	// Compile contract
 	prog, err := s.DualFundScript(aPub, bPub)
@@ -226,7 +234,7 @@ func (s *Server) DualFundRaw(inputs *[]inputType, inputKeys *[]key, aPub string,
 		Amount: aInput.Amount + bInput.Amount,
 	}
 	gasOutput := outputType{
-		Program: "0014a796b852f5db234d4450f80260e5640faf3808ce",
+		Program: outProg,
 		AssetID: gasInput.AssetID,
 		Amount: gasInput.Amount - estimatedGasFee,
 	}
@@ -317,7 +325,7 @@ func (s *Server) DualFundRaw(inputs *[]inputType, inputKeys *[]key, aPub string,
 
 	// Sign tx
 	signReq := &signTxReq{
-		Password: "12345",
+		Password: s.cfg.Wallet.Password,
 		Tx: tx,
 	}
 	signResp, signErr := s.SignTx(signReq)
@@ -344,10 +352,17 @@ func (s *Server) DualFundRaw(inputs *[]inputType, inputKeys *[]key, aPub string,
 
 // Push makes a payment to the peer
 func (s *Server) Push(c *gin.Context, req *pushReq) (*pushResp, error) {
-	return s.PushRaw(&req.Inputs, &req.InputKeys, req.APub, req.BPub, req.Amount)
+	return s.PushRaw(&req.Inputs, &req.InputKeys, req.APub, req.BPub, req.OutProgs, req.Amount)
 }
 
-func (s *Server) PushRaw(inputs *[]inputType, inputKeys *[]key, aPub string, bPub string, amount uint64) (*pushResp, error) {
+func (s *Server) PushRaw(
+	inputs			*[]inputType,
+	inputKeys		*[]key,
+	aPub				string,
+	bPub 				string,
+	outProgs 		[]string,
+	amount 			uint64,
+) (*pushResp, error) {
 	resp := &pushResp{
 		Receipt: "success",
 	}
@@ -365,17 +380,17 @@ func (s *Server) PushRaw(inputs *[]inputType, inputKeys *[]key, aPub string, bPu
 
 	// Build unsigned Tx
 	aOutput := outputType{
-		Program: "0014f077b8a83998adfa8df7c529e8643cfebce2dff8",
+		Program: outProgs[0],
 		AssetID: fundInput.AssetID,
 		Amount: fundInput.Amount - amount,
 	}
 	bOutput := outputType{
-		Program: "001472e49786aea9ae75a5ec4543259b6d10c2c4f57d",
+		Program: outProgs[1],
 		AssetID: fundInput.AssetID,
 		Amount: fundInput.Amount + amount,
 	}
 	gasOutput := outputType{
-		Program: "0014a796b852f5db234d4450f80260e5640faf3808ce",
+		Program: outProgs[2],
 		AssetID: gasInput.AssetID,
 		Amount: gasInput.Amount - estimatedGasFee,
 	}
